@@ -337,7 +337,7 @@ function sanityChecking(){
 	local _countgVcfFilesOnDisk
 
 	_countSamplesInSamplesheet=$(grep -o "${_originalbatch}-[0-9][0-9]*" "${csvFile}" | sort -u | wc -l)
-	_countBamFilesOnDisk=$(find "${TMP_ROOT_DIR}/${_batch}/${analysisFolder}/" -maxdepth 2 -mindepth 2 -name '*bam' | wc -l)
+	_countBamFilesOnDisk=$(find "${TMP_ROOT_DIR}/${_batch}/${analysisFolder}/" -maxdepth 2 -mindepth 2 \( -name '*bam' ! -name '*.repeats.bam' \) | wc -l)
 	_countgVcfFilesOnDisk=$(find "${TMP_ROOT_DIR}/${_batch}/${analysisFolder}/" -maxdepth 2 -mindepth 2 -name '*.gvcf.gz' | wc -l)
 	if [[ "${_countBamFilesOnDisk}" -ne "${_countSamplesInSamplesheet}" ]]
 	then
@@ -467,8 +467,8 @@ function mergeSamplesheets(){
 		# 	then
 	samplesheet="${TMP_ROOT_DIR}/${_batch}/${uniqProjects[0]}.csv"
 	
-	log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Moving ${samplesheet} to ${TMP_ROOT_DIR}/Samplesheets/NGS_DNA/"
-	mv -v "${samplesheet}" "${TMP_ROOT_DIR}/Samplesheets/NGS_DNA/"
+	log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Moving ${samplesheet} to ${TMP_ROOT_DIR}/Samplesheets/POST_DRAGEN/"
+	mv -v "${samplesheet}" "${TMP_ROOT_DIR}/Samplesheets/POST_DRAGEN/"
 	rm -f "${_controlFileBaseForFunction}.failed"
 	mv -v "${_controlFileBaseForFunction}."{started,finished}
 }

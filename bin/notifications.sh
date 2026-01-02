@@ -194,10 +194,13 @@ function notification() {
 				local _maxTimeMin
 				local _oldPhaseStateFile
 				IFS='/' read -r -a _traceSpecifications <<< "${_action}"
-				_maxTime="${_traceSpecifications[1]:-0}"
-				if [[ "${_maxTime}" -ne '0' ]]
+				_check="${_traceSpecifications[1]:-0}"
+				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "CHECK is ${_check} (${_projectStateFile})"
+				if [[ "${_check}" != '0' ]]
 				then
-					_maxTimeMin=$((${_maxTime}*60))
+					if [[ "${_check: -1}" == "t" ]]
+					then
+					_maxTimeMin=$((${_check}*60))
 					_oldPhaseStateFile=$(find "${_projectStateFile}" -mmin +"${_maxTimeMin}")
 					if [[ -z "${_oldPhaseStateFile:-}" ]]
 					then
@@ -207,7 +210,34 @@ function notification() {
 						echo -e "Dear HPC helpdesk,\n\nPlease check if there is something wrong with the ${_phase}.\nThe ${_phase} for project ${_project} is not finished after ${_maxTime} hours.\n\nKind regards,\n\nThe UMCG HPC Helpdesk" > "${_projectStateFile}"
 						log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "${_projectStateFile} file is older than ${_maxTime} hours for project ${_project}."
 					fi
+					elif [[ "${_check: -1}" == "f" ]]
+					then
+						numberOfSkips=0
+						if grep 'thiswasthesecondskip' "${_projectStateFile}"
+						then
+							numberOfSkips=2
+						elif grep 'thiswasthefirstskip' "${_projectStateFile}"
+						then
+							numberOfSkips=1
+							log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "adding thiswasthesecondskip to ${_projectStateFile}"
+							echo "thiswasthesecondskip" >> "${_projectStateFile}"
+						else
+							log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "adding thiswasthefirstskip to ${_projectStateFile}"
+							echo "thiswasthefirstskip" >> "${_projectStateFile}"
+						fi
+					
+						if [[ "${numberOfSkips}" == '0' ||  "${numberOfSkips}" == '1' ]]
+						then
+							log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Waiting with sending a notification, this was only skip #${numberOfSkips}"
+							continue
+						else
+							log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "There were 2 skips already, lets continue with sending a notification"	
+						fi
+					fi
+				else
+					log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Probably this is old channel notification, new format should be with an f or t suffix (e.g. 1t or 2f). The f is for number of failed retry before sending a notification, t is for number of hours before sending timing notification"
 				fi
+				
 				#
 				# Check if email notifications were explicitly enabled on the commandline.
 				#

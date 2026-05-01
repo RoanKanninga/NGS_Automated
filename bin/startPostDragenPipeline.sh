@@ -279,7 +279,7 @@ else
 			
 			cd "${TMP_ROOT_DIR}/nextflow/${project}"
 			
-			if [[ "${project}" == *"GS_"* ]]
+			if [[ "${project}" == "GS_"* ]]
 			then
 				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "GS samplesheet detected"
 				type=$(echo "${project#*-}" | awk 'BEGIN {FS="_"}{print $1}')

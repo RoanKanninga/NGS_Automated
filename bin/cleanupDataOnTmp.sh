@@ -165,7 +165,56 @@ for configFile in "${configFiles[@]}"; do
 	fi
 done
 
+year=$(date +%Y)
+
+mkdir -p "${TMP_ROOT_DIR}/logs/archive_${year}"
+
+#
+## CLEANING UP GENOMESCAN PROJECTS
+#
+if [[ "${GROUP}" == "umcg-genomescan" || "${GROUP}" == "umcg-gst" ]]
+then
+	mapfile -t gsRuns < <(find "${TMP_ROOT_DIR}/" -maxdepth 1 -mindepth 1 -type d -name "[0-9]*")
+
+	if [[ "${#gsRuns[@]}" -eq '0' ]]
+	then
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "No genomescan runs found @ ${TMP_ROOT_DIR}"
+	else
+		for gsRun in "${gsRuns[@]}"
+		do
+			gsBatch=$(basename "${gsRun}")
+			#
+			## Cleaning GsAnalysisData
+			#
+			if [[ -e "${TMP_ROOT_DIR}/logs/${gsBatch}/${gsBatch}.PullAndProcessGsAnalysisData.finished" ]]
+			then
+				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "${gsBatch}.PullAndProcessGsAnalysisData.finished"
+				gsProjectName=$(awk 'BEGIN {FS=","}{if (NR>1){print $2}}' "${gsRun}/UMCG_CSV_${gsBatch}.csv" | awk 'BEGIN {FS="-"}{print $1"-"$2}' | head -1)
+				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "FINIFIFI${TMP_ROOT_DIR}/logs/${gsProjectName}/run01.projectDataCopiedToPrm.finished"
+
+				if [[ -e "${TMP_ROOT_DIR}/logs/${gsProjectName}/run01.projectDataCopiedToPrm.finished" ]]
+				then
+					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "The project data of ${gsBatch} [${gsProjectName}] is also copied to PRM, data can be deleted and log files can be archived"
+					rm -rvf "${gsRun}"
+					#
+					## Cleaning up transfer server
+					#
+					mkdir -p "${HOME}/empty_dir/"
+					log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "rsync -rv --delete -e 'ssh -p 443' \"${HOME}/empty_dir/\" \"${HOSTNAME_DATA_STAGING}::${GENOMESCAN_HOME_DIR}/${gsBatch}\""
+					rsync -rv --delete -e 'ssh -p 443' "${HOME}/empty_dir/" "${HOSTNAME_DATA_STAGING}::${GENOMESCAN_HOME_DIR}/${gsBatch}"
+					rmdir "${HOME}/empty_dir/"
+					touch "${TMP_ROOT_DIR}/logs/${gsBatch}/${gsBatch}.dataCleanedOnTransferServer"
+					mv -vf "${TMP_ROOT_DIR}/logs/${gsBatch}" "${TMP_ROOT_DIR}/logs/archive_${year}/"
+				fi
+			fi
+		done
+	fi
+fi
 ##CLEANING UP PROJECT DATA
+# nextflow folder cleaning
+# moving logs to archive
+
+
 mapfile -t projects < <(find "${TMP_ROOT_DIR}/projects/${pipeline}/" -maxdepth 1 -mindepth 1 -type d)
 if [[ "${#projects[@]}" -eq '0' ]]
 then
@@ -192,7 +241,9 @@ else
 			then
 				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Deleting ${projectName} on tmp, because the project data is on prm for at least ${daysTillRemoval} days"
 				rm -Rfv "${TMP_ROOT_DIR}/"{projects,generatedscripts}"/${pipeline}/${projectName}/"
-				rm -vf "${TMP_ROOT_DIR}/logs/${projectName}/run01.projectDataCopiedToPrm.finished"
+				rm -rfv "${TMP_ROOT_DIR}/nextflow/${projectName}"
+				rm -vf "${TMP_ROOT_DIR}/Samplesheets/${projectName}.csv"
+				mv "${TMP_ROOT_DIR}/logs/${projectName}" "${TMP_ROOT_DIR}/logs/archive_${year}/"
 			else
 				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "The projectDataCopiedToPrm.finished is $(((dateInSecNow - dateInSecAnalysisData) / 86400)) day(s) old. To remove the project and generatedscripts folders the ${TMP_ROOT_DIR}/logs/${projectName}/run01.projectDataCopiedToPrm.finished file needs to be at least ${daysTillRemoval} days old."
 			fi
@@ -241,12 +292,12 @@ else
 			then
 				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Deleting ${runName} on tmp because the rawdata is on prm for at least ${daysTillRemoval} days"
 				rm -Rfv "${TMP_ROOT_DIR}/rawdata/ngs/${runName}/"
-				rm -vf "${TMP_ROOT_DIR}/logs/${runName}/run01.rawDataCopiedToPrm.finished"
+				mv "${TMP_ROOT_DIR}/logs/${runName}" "${TMP_ROOT_DIR}/logs/archive_${year}/"
 			else
 				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' " the rawDataCopiedToPrm is $(((dateInSecNow - dateInSecAnalysisData) / 86400)) day(s) old. To remove rawdata/ngs folder the ${TMP_ROOT_DIR}/logs/${run}/run01.rawDataCopiedToPrm.finished needs to be at least ${daysTillRemoval} days old"
 				continue
 			fi
-			
+
 			## Cleaning up of demultiplexing data
 			if [[ $(((dateInSecNow - dateInSecAnalysisData) / 86400)) -gt "${daysTillRemovalDemultiplexingData}" ]]
 			then
@@ -262,38 +313,6 @@ else
 		fi
 	done
 fi
-
-
-##CLEANING UP GAVIN RUNS
-HOMEDIRGAVIN="${TMP_ROOT_DIR}/GavinStandAlone/"
-
-if [[ -d "${HOMEDIRGAVIN}" ]]
-then
-	find "${HOMEDIRGAVIN}/input/" -name '*.cleaned' -type f -mtime +7 -exec rm -- {} \;
-	if ls "${HOMEDIRGAVIN}/input/"*.vcf.finished 1> /dev/null 2>&1
-	then
-		finishedFiles="$(find "${HOMEDIRGAVIN}/input/"*.vcf.finished -type f)"
-		for i in "${finishedFiles[@]}"
-		do
-			fileName=$(basename "${i}")
-			name=${fileName%%.*}
-			log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Deleting ${TMP_ROOT_DIR}/tmp/NGS_DNA/Gavin_${name}/"
-			log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "     and ${TMP_ROOT_DIR}/generatedscripts/NGS_DNA/Gavin_${name}"
-			log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "     and ${TMP_ROOT_DIR}/projects/NGS_DNA/Gavin_${name}/"
-			if [[ "${dryrun}" == "no" ]]
-			then
-				rm -rf "${TMP_ROOT_DIR}/tmp/NGS_DNA/Gavin_${name}/"
-				rm -rf "${TMP_ROOT_DIR}/generatedscripts//NGS_DNA/Gavin_${name}/"
-				rm -rf "${TMP_ROOT_DIR}/projects/NGS_DNA/Gavin_${name}/"
-				touch "${i}.cleaned"
-			fi
-		done
-	fi
-else
-	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' \
-	"no GavinStandAlone found, skipped"
-fi
-
 
 log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' 'Finished successfully!'
 

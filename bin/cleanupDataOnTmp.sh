@@ -196,6 +196,10 @@ then
 				then
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "The project data of ${gsBatch} [${gsProjectName}] is also copied to PRM, data can be deleted and log files can be archived"
 					rm -rvf "${gsRun}"
+					rm -Rfv "${TMP_ROOT_DIR}/projects/${pipeline}/${gsProjectName}/"
+					rm -rfv "${TMP_ROOT_DIR}/nextflow/${gsProjectName}"
+					rm -vf "${TMP_ROOT_DIR}/Samplesheets/${gsProjectName}.csv"
+					
 					#
 					## Cleaning up transfer server
 					#

@@ -461,7 +461,7 @@ function mergeSamplesheets(){
 		# 	then
 	samplesheet="${TMP_ROOT_DIR}/${_batch}/${uniqProjects[0]}.csv"
 	
-	log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Moving ${samplesheet} to ${TMP_ROOT_DIR}/Samplesheets/POST_DRAGEN/"
+	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Moving ${samplesheet} to ${TMP_ROOT_DIR}/Samplesheets/POST_DRAGEN/"
 	mv -v "${samplesheet}" "${TMP_ROOT_DIR}/Samplesheets/POST_DRAGEN/"
 	rm -f "${_controlFileBaseForFunction}.failed"
 	mv -v "${_controlFileBaseForFunction}."{started,finished}
@@ -529,6 +529,7 @@ do
 			;;
 		s)
 			splitoption="${OPTARG}"
+			;;
 		t)
 			overrulingTMP_LFS="${OPTARG}"
 			;;

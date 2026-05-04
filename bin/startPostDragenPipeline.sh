@@ -58,6 +58,7 @@ Options:
 
 	-h	Show this help.
 	-r	Run number / runID (default is run01)
+	-t	overruling which tmpdir to use (default: tmp1X)
 	-g	Group.
 	-l	Log level.
 		Must be one of TRACE, DEBUG, INFO (default), WARN, ERROR or FATAL.
@@ -81,7 +82,7 @@ EOH
 #
 log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Parsing commandline arguments ..."
 declare group=''
-while getopts ":g:l:r:h" opt; do
+while getopts ":g:l:r:t:h" opt; do
 	case "${opt}" in
 		h)
 			showHelp
@@ -91,6 +92,9 @@ while getopts ":g:l:r:h" opt; do
 			;;
 		r)
 			pipelineRun="${OPTARG}"
+			;;
+		t)
+			overrulingTMP_LFS="${OPTARG}"
 			;;
 		l)
 			l4b_log_level="${OPTARG^^}"
@@ -129,7 +133,6 @@ declare -a configFiles=(
 	"${CFG_DIR}/${group}.cfg"
 	"${CFG_DIR}/${HOSTNAME_SHORT}.cfg"
 	"${CFG_DIR}/sharedConfig.cfg"
-	"${HOME}/molgenis.cfg"
 )
 for configFile in "${configFiles[@]}"
 do
@@ -150,6 +153,14 @@ do
 		log4Bash 'FATAL' "${LINENO}" "${FUNCNAME[0]:-main}" '1' "Config file ${configFile} missing or not accessible."
 	fi
 done
+
+if [[ ! -z "${overrulingTMP_LFS:-}" ]]
+then
+	TMP_LFS="${overrulingTMP_LFS}"
+	source "${CFG_DIR}/sharedConfig.cfg"
+	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "TMP_LFS= ${TMP_LFS}"
+	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "TMP_ROOT_DIR= ${TMP_ROOT_DIR}"
+fi
 
 #
 # Make sure to use an account for cron jobs and *without* write access to prm storage.

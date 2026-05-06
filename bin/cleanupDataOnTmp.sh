@@ -191,8 +191,6 @@ then
 			then
 				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "${gsBatch}.PullAndProcessGsAnalysisData.finished"
 				gsProjectName=$(awk 'BEGIN {FS=","}{if (NR>1){print $2}}' "${gsRun}/UMCG_CSV_${gsBatch}.csv" | awk 'BEGIN {FS="-"}{print $1"-"$2}' | head -1)
-				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "FINIFIFI${TMP_ROOT_DIR}/logs/${gsProjectName}/run01.projectDataCopiedToPrm.finished"
-
 				if [[ -e "${TMP_ROOT_DIR}/logs/${gsProjectName}/run01.projectDataCopiedToPrm.finished" ]]
 				then
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "The project data of ${gsBatch} [${gsProjectName}] is also copied to PRM, data can be deleted and log files can be archived"

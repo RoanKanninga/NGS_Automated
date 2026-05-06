@@ -914,9 +914,10 @@ do
 	fi
 done
 
-if [[ ! -z "${overrulingTMP_LFS:-}" ]]
+if [[ -n "${overrulingTMP_LFS:-}" ]]
 then
 	TMP_LFS="${overrulingTMP_LFS}"
+	# shellcheck disable=SC1091
 	source "${CFG_DIR}/sharedConfig.cfg"
 	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "TMP_LFS= ${TMP_LFS}"
 	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "TMP_ROOT_DIR= ${TMP_ROOT_DIR}"

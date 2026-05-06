@@ -245,7 +245,7 @@ do
 	then
 		readarray -t fastQFiles < <(find "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" -name "*.gz")
 
-		if [[ "${#fastQFiles[@]}" -gt 2 ]]
+		if [[ "${#fastQFiles[@]}" -ge 2 ]]
 		then
 				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "yes more than 2 fastq files"
 				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Rawdata is available for ${run}. workflow will be workflow_dragen_solo"

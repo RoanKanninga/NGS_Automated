@@ -329,6 +329,16 @@ function splitSamplesheetPerProject() {
 						## create a rawDataCopiedToPrm.finished file to tell the copyProjectDataToPrm that the copying of the rawdata to prm for this project has been finished
 						#
 						# shellcheck disable=SC2029
+						
+						if ssh "${DATA_MANAGER}@${sourceServerFQDN}" "mkdir -p ${TMP_ROOT_DIR}/logs/${_project}/"
+						then
+							log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Succesfully created ${TMP_ROOT_DIR}/logs/${_project} on ${sourceServerFQDN}"
+						else
+							log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Could not create ${TMP_ROOT_DIR}/logs/${_project}/ on ${sourceServerFQDN}"
+							mv "${_controlFileBaseForFunction}."{started,failed}
+							return
+						fi
+						# shellcheck disable=SC2029
 						if ssh "${DATA_MANAGER}@${sourceServerFQDN}" "touch ${TMP_ROOT_DIR}/logs/${_project}/run01.rawDataCopiedToPrm.finished"
 						then
 							log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Succesfully created ${TMP_ROOT_DIR}/logs/${_project}/run01.rawDataCopiedToPrm.finished on ${sourceServerFQDN}"

@@ -316,6 +316,7 @@ else
 			mv "${samplesheet}.tmp" "${samplesheet}"
 		fi
 		firstStepOfPipeline="${REPLACEDPIPELINECOLUMN%%+*}"
+		
 		#
 		# Distribute samplesheet to other dat folders
 		#
@@ -426,8 +427,14 @@ do
 				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "The samplesheet is a project samplesheet (no NGS_Demultiplexing); firstStepOfPipeline was set to ${firstStepOfPipeline}."
 		fi
 	fi
-	# shellcheck disable=SC2153
-	samplesheetDestination="${HOSTNAME_TMP}:/groups/${GROUP}/${TMP_LFS}/Samplesheets/${firstStepOfPipeline}/"
+	if [[ "${group}" == "umcg-labgnkbh" ]]
+	then
+		# shellcheck disable=SC2153
+		samplesheetDestination="${HOSTNAME_TMP}:/groups/${GROUP}/${TMP_LFS}/Samplesheets/NGS_Demultiplexing/"
+	else
+		# shellcheck disable=SC2153
+		samplesheetDestination="${HOSTNAME_TMP}:/groups/${GROUP}/${TMP_LFS}/Samplesheets/${firstStepOfPipeline}/"
+	fi
 	#
 	# Move samplesheets with rsync
 	#

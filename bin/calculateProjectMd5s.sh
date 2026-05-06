@@ -56,6 +56,7 @@ Usage:
 Options:
 	-h	Show this help.
 	-g	Group.
+	-t overruling tmp
 	-p pipeline (which pipeline to run NGS_DNA / GAP)
 	-l	Log level.
 		Must be one of TRACE, DEBUG, INFO (default), WARN, ERROR or FATAL.
@@ -101,7 +102,6 @@ function calculateMd5() {
 		return
 	fi
 	
-	
 	if [[ -e "${TMP_ROOT_DIR}/projects/${pipeline}/${_project}/${_run}/jobs/" ]]
 	then
 		#
@@ -127,17 +127,54 @@ function calculateMd5() {
 			mv "${JOB_CONTROLE_FILE_BASE}."{started,failed}
 			return
 		}
-
-	md5deep -r -j0 -o f -l "${_run}/" > "${_run}.md5" 2>> "${JOB_CONTROLE_FILE_BASE}.started" \
-		|| {
+	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "checking for .bam.md5sum files in the $(pwd)/${_run} folder"
+	if find "${_run}/" -name "*.bam.md5sum" -print -quit 2>/dev/null | read -r
+	then	
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "running md5deep without recalculating the checksums of the bam"
+		find "${_run}/" ! -name "*.bam" -exec md5deep -j0 -o f -l {} + > "${_run}.md5" 2>> "${JOB_CONTROLE_FILE_BASE}.started" \
+				|| {
+					log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" "${?}" \
+						"Checksum verification failed. See ${JOB_CONTROLE_FILE_BASE}.failed for details." \
+						2>&1 | tee -a "${JOB_CONTROLE_FILE_BASE}.started"
+					mv "${JOB_CONTROLE_FILE_BASE}."{started,failed}
+					return
+				}
+		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "THISDIR: $(pwd)"
+	
+		numberofBam=$(find  "${_run}/results/alignment/" -name "*.bam" | wc -l)
+		numberofBamMd5=$(find "${_run}/results/alignment/" -name "*.bam.md5sum" | wc -l)
+	
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "numberOfBam: ${numberofBam} & numberOfBamMd5: ${numberofBamMd5}"
+		if [[ "${numberofBam}" == "${numberofBamMd5}" ]]
+		then
+			if [[ -f "${JOB_CONTROLE_FILE_BASE}.mergedMd5s" ]]
+			then
+				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Merging the checksums has already happened, no need for another merge"
+				return
+			else
+				find "${_run}/" -name "*.bam.md5sum" -exec awk '{f=FILENAME; sub(/\.md5sum$/, "", f); print $1"  "f}' {} + >> "${_run}.md5"
+				touch "${JOB_CONTROLE_FILE_BASE}.mergedMd5s"
+			fi
+		else
 			log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" "${?}" \
-				"Checksum verification failed. See ${JOB_CONTROLE_FILE_BASE}.failed for details." \
-				2>&1 | tee -a "${JOB_CONTROLE_FILE_BASE}.started"
+			"Number of bam.md5 [${numberofBamMd5}] and bam files[${numberofBam}] are not matching" \
+			2>&1 | tee -a "${JOB_CONTROLE_FILE_BASE}.started"
 			mv "${JOB_CONTROLE_FILE_BASE}."{started,failed}
 			return
-		}
-	rm -f "${JOB_CONTROLE_FILE_BASE}.failed"
-	mv "${JOB_CONTROLE_FILE_BASE}."{started,finished}
+		fi
+	else
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "There are no .bam.md5sum files in the $(pwd)/${_run} folder, calculating checksums for every file"
+		md5deep -r -j0 -o f -l "${_run}/" > "${_run}.md5" 2>> "${JOB_CONTROLE_FILE_BASE}.started" \
+				|| {
+					log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" "${?}" \
+						"Checksum verification failed. See ${JOB_CONTROLE_FILE_BASE}.failed for details." \
+						2>&1 | tee -a "${JOB_CONTROLE_FILE_BASE}.started"
+					mv "${JOB_CONTROLE_FILE_BASE}."{started,failed}
+					return
+				}
+			fi
+		rm -f "${JOB_CONTROLE_FILE_BASE}.failed"
+		mv "${JOB_CONTROLE_FILE_BASE}."{started,finished}
 }
 
 #
@@ -151,7 +188,7 @@ function calculateMd5() {
 #
 log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Parsing commandline arguments ..."
 declare group=''
-while getopts ":g:l:p:h" opt
+while getopts ":g:l:t:p:h" opt
 do
 	case ${opt} in
 		h)
@@ -163,6 +200,9 @@ do
 		p)
 			pipeline="${OPTARG}"
 			;;	
+		t)
+			overrulingTMP_LFS="${OPTARG}"
+			;;
 		l)
 			l4b_log_level="${OPTARG^^}"
 			l4b_log_level_prio="${l4b_log_levels["${l4b_log_level}"]}"
@@ -220,6 +260,15 @@ do
 		log4Bash 'FATAL' "${LINENO}" "${FUNCNAME:-main}" '1' "Config file ${configFile} missing or not accessible."
 	fi
 done
+
+if [[ -n "${overrulingTMP_LFS:-}" ]]
+then
+	TMP_LFS="${overrulingTMP_LFS}"
+	# shellcheck disable=SC1091
+	source "${CFG_DIR}/sharedConfig.cfg"
+	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "TMP_LFS= ${TMP_LFS}"
+	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "TMP_ROOT_DIR= ${TMP_ROOT_DIR}"
+fi
 
 #
 # Execution of this script requires ateambot account.

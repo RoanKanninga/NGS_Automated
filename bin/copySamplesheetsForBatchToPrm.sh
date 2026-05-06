@@ -339,11 +339,13 @@ log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Log files will be written 
 #
 declare -a batchDirsFromSourceServer
 # shellcheck disable=SC2029
-readarray -t batchDirsFromSourceServer< <(ssh "${DATA_MANAGER}"@"${sourceServerFQDN}" "find \"${SCR_ROOT_DIR}/\" -maxdepth 1 -mindepth 1 -type d -name '[0-9]*-[0-9]*'")
+
+readarray -t batchDirsFromSourceServer < <(ssh "${DATA_MANAGER}@${sourceServerFQDN}" "find \"${SCR_ROOT_DIR}\" -mindepth 2 -maxdepth 2 -type d  -path \"${SCR_ROOT_DIR}/[0-9]*-[0-9]*/Raw_data\" 2>/dev/null"
+)
 
 if [[ "${#batchDirsFromSourceServer[@]}" -eq '0' ]]
 then
-	log4Bash 'WARN' "${LINENO}" "${FUNCNAME:-main}" '0' "No batch directories found at ${DATA_MANAGER}@${sourceServerFQDN}:${SCR_ROOT_DIR}/[0-9]*-[0-9]*."
+	log4Bash 'WARN' "${LINENO}" "${FUNCNAME:-main}" '0' "No batch directories found at ${DATA_MANAGER}@${sourceServerFQDN}:${SCR_ROOT_DIR}/[0-9]*-[0-9]*/Raw_data/."
 else
 	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Found batch directories ${batchDirsFromSourceServer[*]:-}."
 	for batchDirFromSourceServer in "${batchDirsFromSourceServer[@]}"
@@ -351,7 +353,9 @@ else
 		#
 		# Process this batch.
 		#
-		batch="$(basename "${batchDirFromSourceServer}")"
+		
+		batch="$(basename "$(dirname "${batchDirFromSourceServer}")")"
+		
 		controlFileBase="${PRM_ROOT_DIR}/logs/${batch}/"
 		export JOB_CONTROLE_FILE_BASE="${controlFileBase}/${batch}.${SCRIPT_NAME}"
 		# shellcheck disable=SC2174

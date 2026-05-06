@@ -151,7 +151,7 @@ function calculateMd5() {
 			if [[ -f "${JOB_CONTROLE_FILE_BASE}.mergedMd5s" ]]
 			then
 				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Merging the checksums has already happened, no need for another merge"
-				continue
+				return
 			else
 				find "${_run}/" -name "*.bam.md5sum" -exec awk '{f=FILENAME; sub(/\.md5sum$/, "", f); print $1"  "f}' {} + >> "${_run}.md5"
 				touch "${JOB_CONTROLE_FILE_BASE}.mergedMd5s"
@@ -262,9 +262,10 @@ do
 	fi
 done
 
-if [[ ! -z "${overrulingTMP_LFS:-}" ]]
+if [[ -n "${overrulingTMP_LFS:-}" ]]
 then
 	TMP_LFS="${overrulingTMP_LFS}"
+	# shellcheck source=/dev/null
 	source "${CFG_DIR}/sharedConfig.cfg"
 	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "TMP_LFS= ${TMP_LFS}"
 	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "TMP_ROOT_DIR= ${TMP_ROOT_DIR}"

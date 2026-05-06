@@ -338,6 +338,7 @@ function splitSamplesheetPerProject() {
 							mv "${_controlFileBaseForFunction}."{started,failed}
 							return
 						fi
+						# shellcheck disable=SC2029
 						if ssh "${DATA_MANAGER}@${sourceServerFQDN}" "touch ${TMP_ROOT_DIR}/logs/${_project}/run01.rawDataCopiedToPrm.finished"
 						then
 							log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Succesfully created ${TMP_ROOT_DIR}/logs/${_project}/run01.rawDataCopiedToPrm.finished on ${sourceServerFQDN}"

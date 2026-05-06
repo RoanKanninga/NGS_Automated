@@ -354,7 +354,7 @@ else
 		# Process this batch.
 		#
 		
-		batch="$(basename $(dirname "${batchDirFromSourceServer}"))"
+		batch="$(basename "$(dirname "${batchDirFromSourceServer}")")"
 		
 		controlFileBase="${PRM_ROOT_DIR}/logs/${batch}/"
 		export JOB_CONTROLE_FILE_BASE="${controlFileBase}/${batch}.${SCRIPT_NAME}"

@@ -172,6 +172,7 @@ mkdir -p "${TMP_ROOT_DIR}/logs/archive_${year}"
 #
 ## CLEANING UP GENOMESCAN PROJECTS
 #
+# shellcheck disable=SC2153
 if [[ "${GROUP}" == "umcg-genomescan" || "${GROUP}" == "umcg-gst" ]]
 then
 	mapfile -t gsRuns < <(find "${TMP_ROOT_DIR}/" -maxdepth 1 -mindepth 1 -type d -name "[0-9]*")

@@ -545,7 +545,8 @@ do
 			;;
 		*)
 			log4Bash 'FATAL' "${LINENO}" "${FUNCNAME[0]:-main}" '1' "Unhandled option. Try $(basename "${0}") -h for help."
-			;;	esac
+			;;	
+		esac
 done
 
 #
@@ -592,9 +593,10 @@ do
 done
 
 
-if [[ ! -z "${overrulingTMP_LFS:-}" ]]
+if [[ -n "${overrulingTMP_LFS:-}" ]]
 then
 	TMP_LFS="${overrulingTMP_LFS}"
+	# shellcheck source=${CFG_DIR}/sharedConfig.cfg
 	source "${CFG_DIR}/sharedConfig.cfg"
 	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "TMP_LFS= ${TMP_LFS}"
 	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "TMP_ROOT_DIR= ${TMP_ROOT_DIR}"
@@ -708,8 +710,8 @@ then
 				fi
 
 				log4Bash 'INFO' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Processing pulling analysis batch ${gsBatch}..."
-				# shellcheck disable=SC2174
 				logDir="${TMP_ROOT_DIR}/logs/${gsBatch}/"
+				# shellcheck disable=SC2174
 				mkdir -m 2770 -p "${logDir}"
 
 				printf '' > "${JOB_CONTROLE_FILE_BASE}.started"

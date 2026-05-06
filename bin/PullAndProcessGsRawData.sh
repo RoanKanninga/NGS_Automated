@@ -856,6 +856,7 @@ do
 			;;
 		s)
 			splitoption="${OPTARG}"
+			;;
 		\?)
 			log4Bash 'FATAL' "${LINENO}" "${FUNCNAME[0]:-main}" '1' "Invalid option -${OPTARG}. Try $(basename "${0}") -h for help."
 			;;

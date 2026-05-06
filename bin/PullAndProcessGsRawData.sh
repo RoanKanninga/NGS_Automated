@@ -1055,7 +1055,7 @@ if [[ "${splitoption}" == "all" ]] || [[ "${splitoption}" == "pull" ]]; then
 	else
 		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "server is down, there will be no data transfer!"
 	fi
-
+fi
 #
 ##
 ### process Raw_data 

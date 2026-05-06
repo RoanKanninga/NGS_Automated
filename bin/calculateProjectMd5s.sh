@@ -101,7 +101,6 @@ function calculateMd5() {
 			"Cannot find ${_controlFileBase}.pipeline.finished: skipping ${_project}/${_run}/ ... "
 		return
 	fi
-	########## Check if merging of bam.md5 al gebeurd is, maak log file calculateprojectDmd5s.merged ofzoiets
 	
 	if [[ -e "${TMP_ROOT_DIR}/projects/${pipeline}/${_project}/${_run}/jobs/" ]]
 	then

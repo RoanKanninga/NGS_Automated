@@ -222,7 +222,7 @@ do
 	fi
 
 	jobControleFileBase="${TMP_ROOT_DIR}/logs/${run}/run01.startInhouseDragenPipeline"
-	if [[ -f "${jobControleFileBase}.finished" ]]
+	if [[ -f "${jobControleFileBase}.finished" || -e "${TMP_ROOT_DIR}/logs/${run}/run01.pipeline.finished" ]]
 	then
 		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Found ${jobControleFileBase}.finished: Skipping finished ${run}."
 		continue

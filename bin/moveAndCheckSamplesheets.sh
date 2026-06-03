@@ -430,7 +430,7 @@ do
 	if [[ "${group}" == "umcg-labgnkbh" ]]
 	then
 		# shellcheck disable=SC2153
-		samplesheetDestination="${HOSTNAME_TMP}:/groups/${GROUP}/${TMP_LFS}/Samplesheets/NGS_Demultiplexing/"
+		samplesheetDestination="${HOSTNAME_TMP}:/groups/${GROUP}/${TMP_LFS}/Samplesheets/DRAGEN/"
 	else
 		# shellcheck disable=SC2153
 		samplesheetDestination="${HOSTNAME_TMP}:/groups/${GROUP}/${TMP_LFS}/Samplesheets/${firstStepOfPipeline}/"

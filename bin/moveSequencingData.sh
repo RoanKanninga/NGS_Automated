@@ -217,7 +217,6 @@ else
 				fi
 			else
 				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Sequencing run is not (yet) finished."
-				continue
 			fi
 
 			if [[ -f "${JOB_CONTROLE_FILE_BASE}.transferCompleted" ]]

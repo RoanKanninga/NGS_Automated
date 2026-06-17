@@ -496,7 +496,7 @@ if [[ -n "${sourceServerRootDir:-}" ]]
 then
 	SCR_ROOT_DIR="${sourceServerRootDir}"
 	TMP_ROOT_DIAGNOSTICS_DIR="${SCR_ROOT_DIR}"
-	lockFileSuffix=$(echo ${sourceServerRootDir} | awk 'BEGIN {FS="/"}{print $2}') 
+	lockFileSuffix=$(echo "${sourceServerRootDir}" | awk 'BEGIN {FS="/"}{print $2}') 
 	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Using alternative sourceServerRootDir ${sourceServerRootDir} as SCR_ROOT_DIR."
 
 fi

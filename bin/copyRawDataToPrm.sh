@@ -281,17 +281,6 @@ function splitSamplesheetPerProject() {
 		#  * either only demultiplexing was requested via the samplesheet
 		#  * or when disabled on the commandline by enabling "archiveMode".
 		#
-	
-			# shellcheck disable=SC2029
-		if ssh "${DATA_MANAGER}@${sourceServerFQDN}" "touch ${TMP_ROOT_DIR}/logs/${_project}/run01.rawDataCopiedToPrm.finished"
-		then
-			log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Succesfully created ${TMP_ROOT_DIR}/logs/${_project}/run01.rawDataCopiedToPrm.finished on ${sourceServerFQDN}"
-		else
-			log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Could not create ${TMP_ROOT_DIR}/logs/${_project}/run01.rawDataCopiedToPrm.finished on ${sourceServerFQDN}"
-			mv "${_controlFileBaseForFunction}."{started,failed}
-		fi
-		break
-		
 
 		if [[ "${archiveMode}" == 'false' ]]; then
 			#
@@ -525,7 +514,7 @@ declare -a configFiles=(
 	"${CFG_DIR}/${group}.cfg"
 	"${CFG_DIR}/${HOSTNAME_SHORT}.cfg"
 	"${CFG_DIR}/sharedConfig.cfg"
-	"${HOME}/molgenis.cfg"
+
 )
 for configFile in "${configFiles[@]}"
 do

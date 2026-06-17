@@ -125,7 +125,7 @@ declare -a configFiles=(
 	"${CFG_DIR}/${group}.cfg"
 	"${CFG_DIR}/${HOSTNAME_SHORT}.cfg"
 	"${CFG_DIR}/sharedConfig.cfg"
-	"${HOME}/molgenis.cfg"
+
 )
 
 for configFile in "${configFiles[@]}"
@@ -222,7 +222,7 @@ do
 	fi
 
 	jobControleFileBase="${TMP_ROOT_DIR}/logs/${run}/run01.startInhouseDragenPipeline"
-	if [[ -f "${jobControleFileBase}.finished" ]]
+	if [[ -f "${jobControleFileBase}.finished" || -e "${TMP_ROOT_DIR}/logs/${run}/run01.pipeline.finished" ]]
 	then
 		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Found ${jobControleFileBase}.finished: Skipping finished ${run}."
 		continue
@@ -301,15 +301,28 @@ do
 	thisDir=$(pwd)
 	cd "${TMP_ROOT_DIR}/nextflow/${run}"
 	thisHost=$(hostname)
-	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "rerunning/resuming: nextflow run -resume --samplesheet \"${samplesheet}\" --tmpdir \"${TMP_LFS}\" --group \"${group}\" --cluster \"${thisHost}\" -w \"${TMP_ROOT_DIR}/nextflow/${run}\" -c \"${EBROOTNF_NGS_DNA}/dragen.config\" \"${EBROOTNF_NGS_DNA}/${workflow}\""
+
 	
-	nextflow run -resume --samplesheet "${samplesheet}" --tmpdir "${TMP_LFS}" --group "${group}" --cluster "${thisHost}" -profile slurm -w "${TMP_ROOT_DIR}/nextflow/${run}" -c "${EBROOTNF_NGS_DNA}/dragen.config" "${EBROOTNF_NGS_DNA}/${workflow}" \
-	|| {
-	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "pipeline crashed, it might be due to one of the following variables: samplesheet:[${samplesheet}] tmpdir:[${TMP_LFS}] group:[${group}] workdir:[${TMP_ROOT_DIR}/nextflow/${run}] type/workflow:[${workflow}]"
-	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "To rerun: navigate to ${TMP_ROOT_DIR}/nextflow/${run} and then execute the following: nextflow run --samplesheet \"${samplesheet}\" --tmpdir \"${TMP_LFS}\" --group \"${group}\" -w \"${TMP_ROOT_DIR}/nextflow/${run}\" \"${EBROOTNF_NGS_DNA}/${workflow}\""
-	mv -v "${JOB_CONTROLE_FILE_BASE}."{started,failed}
-	continue
-	}
+	if [[ "${group}" == 'umcg-labgnkbh' ]]
+	then
+		nextflow run -resume --samplesheet "${samplesheet}" --tmpdir "${TMP_LFS}" --group "${group}" --cluster "${thisHost}" -profile slurm -w "${TMP_ROOT_DIR}/nextflow/${run}" -c "${EBROOTNF_NGS_DNA}/dragen.config" "${EBROOTNF_NGS_DNA}/workflow_demultiplexing.nf" \
+		|| {
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "pipeline crashed, it might be due to one of the following variables: samplesheet:[${samplesheet}] tmpdir:[${TMP_LFS}] group:[${group}] workdir:[${TMP_ROOT_DIR}/nextflow/${run}] type/workflow:workflow_demultiplexing.nf"
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "To rerun: navigate to ${TMP_ROOT_DIR}/nextflow/${run} and then execute the following: nextflow run --samplesheet \"${samplesheet}\" --tmpdir \"${TMP_LFS}\" --group \"${group}\" -w \"${TMP_ROOT_DIR}/nextflow/${run}\" \"${EBROOTNF_NGS_DNA}/workflow_demultiplexing.nf\""
+		mv -v "${JOB_CONTROLE_FILE_BASE}."{started,failed}
+		continue
+		}
+		touch "${TMP_ROOT_DIR}/logs/${run}/run01.demultiplexing.finished"
+	else
+	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "rerunning/resuming: nextflow run -resume --samplesheet \"${samplesheet}\" --tmpdir \"${TMP_LFS}\" --group \"${group}\" --cluster \"${thisHost}\" -w \"${TMP_ROOT_DIR}/nextflow/${run}\" -c \"${EBROOTNF_NGS_DNA}/dragen.config\" \"${EBROOTNF_NGS_DNA}/${workflow}\""	
+		nextflow run -resume --samplesheet "${samplesheet}" --tmpdir "${TMP_LFS}" --group "${group}" --cluster "${thisHost}" -profile slurm -w "${TMP_ROOT_DIR}/nextflow/${run}" -c "${EBROOTNF_NGS_DNA}/dragen.config" "${EBROOTNF_NGS_DNA}/${workflow}" \
+		|| {
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "pipeline crashed, it might be due to one of the following variables: samplesheet:[${samplesheet}] tmpdir:[${TMP_LFS}] group:[${group}] workdir:[${TMP_ROOT_DIR}/nextflow/${run}] type/workflow:[${workflow}]"
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "To rerun: navigate to ${TMP_ROOT_DIR}/nextflow/${run} and then execute the following: nextflow run --samplesheet \"${samplesheet}\" --tmpdir \"${TMP_LFS}\" --group \"${group}\" -w \"${TMP_ROOT_DIR}/nextflow/${run}\" \"${EBROOTNF_NGS_DNA}/${workflow}\""
+		mv -v "${JOB_CONTROLE_FILE_BASE}."{started,failed}
+		continue
+		}
+	fi	
 	touch "${TMP_ROOT_DIR}/logs/${run}/run01.pipeline.finished"
 
 	cd "${thisDir}"

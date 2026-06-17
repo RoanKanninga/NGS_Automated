@@ -465,7 +465,7 @@ declare -a configFiles=(
 	"${CFG_DIR}/${group}.cfg"
 	"${CFG_DIR}/${HOSTNAME_SHORT}.cfg"
 	"${CFG_DIR}/sharedConfig.cfg"
-	"${HOME}/molgenis.cfg"
+
 )
 for configFile in "${configFiles[@]}"
 do
@@ -490,11 +490,15 @@ done
 #
 # Overrule group's SCR_ROOT_DIR if necessary.
 #
+lockFileSuffix="${GROUP}"
+
 if [[ -n "${sourceServerRootDir:-}" ]]
 then
 	SCR_ROOT_DIR="${sourceServerRootDir}"
 	TMP_ROOT_DIAGNOSTICS_DIR="${SCR_ROOT_DIR}"
+	lockFileSuffix=$(echo "${sourceServerRootDir}" | awk 'BEGIN {FS="/"}{print $2}') 
 	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Using alternative sourceServerRootDir ${sourceServerRootDir} as SCR_ROOT_DIR."
+
 fi
 
 if [[ -z "${dat_dir:-}" ]]
@@ -529,7 +533,7 @@ fi
 # * and parsing commandline arguments,
 # but before doing the actual data trnasfers.
 #
-lockFile="${PRM_ROOT_DIR}/logs/${SCRIPT_NAME}.lock"
+lockFile="${PRM_ROOT_DIR}/logs/${SCRIPT_NAME}.${lockFileSuffix}.lock"
 thereShallBeOnlyOne "${lockFile}"
 log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Successfully got exclusive access to lock file ${lockFile} ..."
 log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Log files will be written to ${PRM_ROOT_DIR}/logs ..."

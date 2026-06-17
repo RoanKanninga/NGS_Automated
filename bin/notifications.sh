@@ -467,17 +467,17 @@ function postMessageToChannel() {
 	else
 		log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "This webhook: ${_lfsRootDir}/logs/${_phase}.notification_webhooks IS NOT READABLE"
 	fi
-	if [[ -r "${_lfsRootDir}/logs/${_phase}.{_state}.notification_webhooks" ]]
+	if [[ -r "${_lfsRootDir}/logs/${_phase}.${_state}.notification_webhooks" ]]
 	then
-		log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Found ${_lfsRootDir}/logs/${_phase}.{_state}.notification_webhooks for more fine grained control over recipients for state {_state}."
-		readarray -t _webhooks < "${_lfsRootDir}/logs/${_phase}.{_state}.notification_webhooks"
-		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "Parsed ${_phase}.{_state}.notification_webhooks."
+		log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Found ${_lfsRootDir}/logs/${_phase}.${_state}.notification_webhooks for more fine grained control over recipients for state {_state}."
+		readarray -t _webhooks < "${_lfsRootDir}/logs/${_phase}.${_state}.notification_webhooks"
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "Parsed ${_phase}.${_state}.notification_webhooks."
 	else
-		log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "This webhook: ${_lfsRootDir}/logs/${_phase}.{_state}.notification_webhooks IS NOT READABLE"
+		log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "This webhook: ${_lfsRootDir}/logs/${_phase}.${_state}.notification_webhooks IS NOT READABLE"
 	fi
 	if [[ "${#_webhooks[@]}" -lt '1' ]]
 	then
-		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Cannot parse recipients from ${_lfsRootDir}/logs/${_phase}.notification_webhooks nor from ${_lfsRootDir}/logs/${_phase}.{_state}.notification_webhooks."
+		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Cannot parse recipients from ${_lfsRootDir}/logs/${_phase}.notification_webhooks nor from ${_lfsRootDir}/logs/${_phase}.${_state}.notification_webhooks."
 		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Cannot send notifications to channels via webhooks. I'm giving up, bye bye."
 		mv "${_controlFileBaseForFunction}."{started,failed}
 		return
@@ -610,7 +610,7 @@ declare -a configFiles=(
 	"${CFG_DIR}/${group}.cfg"
 	"${CFG_DIR}/${HOSTNAME_SHORT}.cfg"
 	"${CFG_DIR}/sharedConfig.cfg"
-	"${HOME}/molgenis.cfg"
+
 )
 for configFile in "${configFiles[@]}"
 do

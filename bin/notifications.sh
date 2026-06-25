@@ -501,7 +501,7 @@ function postMessageToChannel() {
 	else
 		_messageBody="$(tr \" \' < "${_projectStateFile}")"
 	fi
-	_messageBody="${_messageBody//\\/\\\\}"
+	#_messageBody="${_messageBody//\\/\\\\}"
 	_jsonMessage=$(cat <<-EOM
 		{
 		"title": "${ROLE_USER}@${HOSTNAME_SHORT}: Project ${_project}/${_run} has state ${_state} for phase ${_phase} at ${_timestamp}.",

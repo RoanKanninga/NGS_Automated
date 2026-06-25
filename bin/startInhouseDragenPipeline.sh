@@ -245,12 +245,12 @@ do
 	then
 		readarray -t fastQFiles < <(find "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" -name "*.gz")
 
-		if [[ "${#fastQFiles[@]}" -ge 2 ]]
-		then
-				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "yes more than 2 fastq files"
-				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Rawdata is available for ${run}. workflow will be workflow_dragen_solo"
-				workflow='workflow_dragen_solo.nf'
-		else
+#		if [[ "${#fastQFiles[@]}" -ge 2 ]]
+#		then
+#				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "yes more than 2 fastq files"
+#				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Rawdata is available for ${run}. workflow will be workflow_dragen_solo"
+#				workflow='workflow_dragen_solo.nf'
+#		else
 			log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Checking if bcl data is available."
 			#
 			# Check if the run has already completed.
@@ -267,7 +267,7 @@ do
 				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Sequencer is busy producing data: skipping ${run}."
 				continue
 			fi
-		fi
+#		fi
 	else
 		
 		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Checking if bcl data is available."

@@ -166,14 +166,15 @@ thereShallBeOnlyOne "${lockFile}"
 log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Successfully got exclusive access to lock file ${lockFile} ..."
 log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Log files will be written to ${TMP_ROOT_DIR}/logs ..."
 
-mapfile -t projects < <(find "/groups/${GROUP_ARRAY}/${TMP_LFS}/runs/AGCT/" -maxdepth 1 -mindepth 1 -type d -name "*batch*")
+mapfile -t projects < <(find "${TMP_ROOT_DIR}/runs/AGCT/" -maxdepth 1 -mindepth 1 -type d -name "*batch*")
 if [[ "${#projects[@]}" -eq '0' ]]
 then
-	log4Bash 'WARN' "${LINENO}" "${FUNCNAME:-main}" '0' "No projects found @ /groups/${GROUP_ARRAY}/${TMP_LFS}/runs/AGCT/."
+	log4Bash 'WARN' "${LINENO}" "${FUNCNAME:-main}" '0' "No projects found @ ${TMP_ROOT_DIR}/runs/AGCT/."
 else
 	for project in "${projects[@]}"
 	do
-		project=$(basename "${project}")
+		originalproject=$(basename "${project}")
+		project="${originalproject}_plusGDIO"
 		logDir="${TMP_ROOT_DIR}/logs/${project}/"
 		mkdir -m 2770 -p "${logDir}"
 		controlFileBase="${logDir}/run01"
@@ -186,14 +187,14 @@ else
 		fi
 		
 		#check if pipeline is finished
-		if [[ -f "/groups/${GROUP_ARRAY}/${TMP_LFS}/logs/${project}/run01.arrayConversion.finished" ]]
+		if [[ -f "${TMP_ROOT_DIR}/logs/${originalproject}/run01.arrayConversion.finished" ]]
 		then
 
 			printf '' > "${JOB_CONTROLE_FILE_BASE}.started"
 			declare -a _sampleSheetColumnNames=()
 			declare -A _sampleSheetColumnOffsets=()
 
-			IFS="," read -r -a _sampleSheetColumnNames <<< "$(head -1 /groups/${GROUP_ARRAY}/${TMP_LFS}/Samplesheets/archive/${project}.csv)"
+			IFS="," read -r -a _sampleSheetColumnNames <<< "$(head -1 ${TMP_ROOT_DIR}/Samplesheets/PGx/${originalproject}.csv)"
 			for (( _offset = 0 ; _offset < ${#_sampleSheetColumnNames[@]} ; _offset++ ))
 			do
 				_sampleSheetColumnOffsets["${_sampleSheetColumnNames[${_offset}]}"]="${_offset}"
@@ -205,12 +206,12 @@ else
 				_sentrixBarcodeFieldIndex=$((${_sampleSheetColumnOffsets["SentrixBarcode_A"]} + 1))
 			fi
 		
-			mapfile -t sentrixBarcodes< <(awk -v s=${_sentrixBarcodeFieldIndex} 'BEGIN {FS=","}{if (NR>1){print $s}}' /groups/${GROUP_ARRAY}/${TMP_LFS}/Samplesheets/archive/${project}.csv | sort -V  | uniq)
+			mapfile -t sentrixBarcodes< <(awk -v s=${_sentrixBarcodeFieldIndex} 'BEGIN {FS=","}{if (NR>1){print $s}}' ${TMP_ROOT_DIR}/Samplesheets/PGx/${originalproject}.csv | sort -V  | uniq)
 		
 			if [[ "${#sentrixBarcodes[@]}" -eq '0' ]]
 			then
 				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "There are no sentrixBarcodes in the samplesheet!"
-				return
+				continue
 			else
 				module load PGx
 				for sentrixBarcode in ${sentrixBarcodes[@]}
@@ -218,14 +219,15 @@ else
 					log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "copying ${sentrixBarcode} to ${TMP_ROOT_DIR}/rawdata/gtc/"
 					rsync -rv "/groups/umcg-gap/${TMP_LFS}/rawdata/array/GTC/${sentrixBarcode}" "${TMP_ROOT_DIR}/rawdata/gtc/"
 				done
-				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "running ${EBROOTPGX}/pgx_pre_preprocess.sh -p ${project}"
-				bash "${EBROOTPGX}/pgx_pre_preprocess.sh" -p "${project}" \
+				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "running ${EBROOTPGX}/pgx_pre_preprocess.sh -p ${originalproject}"
+				bash "${EBROOTPGX}/pgx_pre_preprocess.sh" -p "${originalproject}" \
 				|| {
-				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "pipeline crashed: ${EBROOTPGX}/pgx_pre_preprocess.sh" -p "${project}"
+				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "pipeline crashed: ${EBROOTPGX}/pgx_pre_preprocess.sh -p ${originalproject}"
+				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" "0" "logs can be found here: ${JOB_CONTROLE_FILE_BASE}.failed"
 				mv -v "${JOB_CONTROLE_FILE_BASE}."{started,failed}
 				continue
 				}
-				rm "${JOB_CONTROLE_FILE_BASE}.failed"
+				rm -f "${JOB_CONTROLE_FILE_BASE}.failed"
 				mv "${JOB_CONTROLE_FILE_BASE}."{started,finished}
 			fi
 		fi

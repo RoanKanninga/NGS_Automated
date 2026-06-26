@@ -52,7 +52,6 @@ Options:
 	-h	Show this help.
 	-g	Group.
 	-t	overruling which tmpdir to use (default: tmp1X)
-	-s	SplitOption to run only part of the script or the whole script pull|process|all
 	-l	Log level.
 		Must be one of TRACE, DEBUG, INFO (default), WARN, ERROR or FATAL.
 
@@ -79,7 +78,7 @@ EOH
 #
 log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Parsing commandline arguments ..."
 declare group=''
-while getopts ":g:l:s:t:h" opt
+while getopts ":g:l:t:h" opt
 do
 	case "${opt}" in
 		h)
@@ -87,9 +86,6 @@ do
 			;;
 		g)
 			group="${OPTARG}"
-			;;
-		s)
-			splitoption="${OPTARG}"
 			;;
 		t)
 			overrulingTMP_LFS="${OPTARG}"
@@ -117,11 +113,7 @@ if [[ -z "${group:-}" ]]
 then
 	log4Bash 'FATAL' "${LINENO}" "${FUNCNAME:-main}" '1' 'Must specify a group with -g.'
 fi
-if [[ -z "${splitoption:-}" ]]
-then
-	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME[0]:-main}" '0' 'No specifc splitoption provide, default is (all)'
-	splitoption="all"
-fi
+
 #
 # Source config files.
 #
@@ -266,7 +258,7 @@ then
 					awk 'BEGIN {FS=","}{if (NR==1){print $0",analysis,manifest,egt"}else{print $0",diagnostics,GSAMD-24v3-0-EA_20034606_A1.bpm,referentie_GSAMD_V3_20210115.egt"}}' "${gapBatch}.csv.tmp" > "${gapBatch}.csv.tmp2"
 					
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "moving glaasjes directories to ${TMP_ROOT_DIR}/rawdata/array/IDAT/"
-					find * -type d -exec mv -vf {} "${TMP_ROOT_DIR}/rawdata/array/IDAT/" \;
+					find * -type d -exec rsync -rv {} "${TMP_ROOT_DIR}/rawdata/array/IDAT/" \;
 
 					declare -a _sampleSheetColumnNames=()
 					declare -A _sampleSheetColumnOffsets=()

@@ -210,7 +210,7 @@ GAP_HOME_DIR='groups/umcg-gap/'
 #
 if [[ "${server}" == 'up' ]]	
 then
-	readarray -t gapSourceServer< <(rsync -rv -e 'ssh -p 443' "${HOSTNAME_DATA_STAGING}::${GAP_HOME_DIR}/" | awk '{if ($5 != "" && $5 != "." && $5 ~/D-/){print $5}}')
+	readarray -t gapSourceServer< <(rsync -rv -e 'ssh -p 443' "${HOSTNAME_DATA_STAGING}::${GAP_HOME_DIR}/" | awk '{if ($5 != "" && $5 != "." && $5 ~/D-/ && $5 ~ /tar$/){print $5}}')
 
 	if [[ "${#gapSourceServer[@]}" -eq '0' ]]
 	then
@@ -302,6 +302,8 @@ then
 					rsync -v "${gapBatch}.csv.tmp3" "${TMP_ROOT_DIR}/Samplesheets/AGCT/${newProjectName}.csv"
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "navigate back to original folder"
 					cd -
+					rm -f "${JOB_CONTROLE_FILE_BASE}.failed"
+					mv "${JOB_CONTROLE_FILE_BASE}."{started,finished}
 				else
 					log4Bash 'WARN' "${LINENO}" "${FUNCNAME:-main}" '0' "${GAP_HOME_DIR}/${gapBatch}/${gapBatch}.finished does not exist"
 					continue

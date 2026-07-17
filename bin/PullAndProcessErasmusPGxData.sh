@@ -24,9 +24,6 @@ INSTALLATION_DIR="$(cd -P "$(dirname "${0}")/.." && pwd)"
 LIB_DIR="${INSTALLATION_DIR}/lib"
 CFG_DIR="${INSTALLATION_DIR}/etc"
 HOSTNAME_SHORT="$(hostname -s)"
-ROLE_USER="$(whoami)"
-REAL_USER="$(logname 2>/dev/null || echo 'no login name')"
-
 
 if [[ -f "${LIB_DIR}/sharedFunctions.bash" && -r "${LIB_DIR}/sharedFunctions.bash" ]]
 then
@@ -189,7 +186,6 @@ log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Log files will be written 
 #
 # shellcheck disable=SC2153
 log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Pulling data from data staging server ${HOSTNAME_DATA_STAGING} using rsync to /groups/${GROUP}/${TMP_LFS}/ ..."
-declare -a gsBatchesSourceServer
 
 ##
 log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "HOSTNAME: ${HOSTNAME_DATA_STAGING}"
@@ -234,10 +230,10 @@ then
 				mkdir -m 2770 -p "${logDir}"
 				printf '' > "${JOB_CONTROLE_FILE_BASE}.started"
 				
-				gapBatchUploadCompleted='false'
 				if rsync -e 'ssh -p 443' "${HOSTNAME_DATA_STAGING}::${GAP_HOME_DIR}/${gapBatchFile}.md5" 2>/dev/null
 				then
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "creating tmp folder"
+					# shellcheck disable=SC2174
 					mkdir -m 2770 -p "${TMP_ROOT_DIR}/tmp/AGCT/${gapBatch}"
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "copying ${gapBatchFile} to ${TMP_ROOT_DIR}/tmp/AGCT/${gapBatch}/"
 					rsync -rv -e 'ssh -p 443' "${HOSTNAME_DATA_STAGING}::${GAP_HOME_DIR}/${gapBatchFile}" "${TMP_ROOT_DIR}/tmp/AGCT/${gapBatch}/"

@@ -427,10 +427,10 @@ do
 				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "The samplesheet is a project samplesheet (no NGS_Demultiplexing); firstStepOfPipeline was set to ${firstStepOfPipeline}."
 		fi
 	fi
-	if [[ "${group}" == "umcg-labgnkbh" ]]
+	if [[ "${group}" == "umcg-genomescan" ]]
 	then
 		# shellcheck disable=SC2153
-		samplesheetDestination="${HOSTNAME_TMP}:/groups/${GROUP}/${TMP_LFS}/Samplesheets/DRAGEN/"
+		samplesheetDestination="${HOSTNAME_TMP}:/groups/${GROUP}/${SCR_LFS}/Samplesheets/${firstStepOfPipeline}/"
 	else
 		# shellcheck disable=SC2153
 		samplesheetDestination="${HOSTNAME_TMP}:/groups/${GROUP}/${TMP_LFS}/Samplesheets/${firstStepOfPipeline}/"

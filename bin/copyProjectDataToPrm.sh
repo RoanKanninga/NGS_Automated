@@ -621,7 +621,7 @@ else
 									else
 										log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Could not remove ${TMP_ROOT_DIAGNOSTICS_DIR}/Samplesheets/${pipeline}/${project}.${SAMPLESHEET_EXT} from ${HOSTNAME_TMP}"
 										mv "${JOB_CONTROLE_FILE_BASE}."{started,failed}
-										return
+										continue
 									fi
 
 									#

@@ -257,7 +257,7 @@ then
 					awk '/Sample_Well/ {display=1} display {print}' ${samplesheet} | awk '{ gsub (" ", "_", $0); print}' > "${gapBatch}.csv.tmp"
 					awk 'BEGIN {FS=","}{if (NR==1){print $0",analysis,manifest,egt"}else{print $0",diagnostics,GSAMD-24v3-0-EA_20034606_A1.bpm,referentie_GSAMD_V3_20210115.egt"}}' "${gapBatch}.csv.tmp" > "${gapBatch}.csv.tmp2"
 					
-					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "moving glaasjes directories to ${TMP_ROOT_DIR}/rawdata/array/IDAT/"
+					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "copying glaasjes directories to ${TMP_ROOT_DIR}/rawdata/array/IDAT/"
 					find * -type d -exec rsync -rv {} "${TMP_ROOT_DIR}/rawdata/array/IDAT/" \;
 
 					declare -a _sampleSheetColumnNames=()

@@ -243,8 +243,7 @@ do
 	samplesheet="${TMP_ROOT_DIR}/Samplesheets/DRAGEN/${run}.csv"
 	if [[ -d "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" ]]
 	then
-		readarray -t fastQFiles < <(find "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" -name "*.gz")
-
+#		readarray -t fastQFiles < <(find "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" -name "*.gz")
 #		if [[ "${#fastQFiles[@]}" -ge 2 ]]
 #		then
 #				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "yes more than 2 fastq files"

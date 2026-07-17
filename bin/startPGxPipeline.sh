@@ -176,6 +176,7 @@ else
 		originalproject=$(basename "${project}")
 		project="${originalproject}_plusGDIO"
 		logDir="${TMP_ROOT_DIR}/logs/${project}/"
+		# shellcheck disable=SC2174
 		mkdir -m 2770 -p "${logDir}"
 		controlFileBase="${logDir}/run01"
 		export JOB_CONTROLE_FILE_BASE="${controlFileBase}.${SCRIPT_NAME}"
@@ -194,7 +195,7 @@ else
 			declare -a _sampleSheetColumnNames=()
 			declare -A _sampleSheetColumnOffsets=()
 
-			IFS="," read -r -a _sampleSheetColumnNames <<< "$(head -1 ${TMP_ROOT_DIR}/Samplesheets/PGx/${originalproject}.csv)"
+			IFS="," read -r -a _sampleSheetColumnNames <<< "$(head -1 "${TMP_ROOT_DIR}/Samplesheets/PGx/${originalproject}.csv")"
 			for (( _offset = 0 ; _offset < ${#_sampleSheetColumnNames[@]} ; _offset++ ))
 			do
 				_sampleSheetColumnOffsets["${_sampleSheetColumnNames[${_offset}]}"]="${_offset}"
@@ -206,7 +207,7 @@ else
 				_sentrixBarcodeFieldIndex=$((${_sampleSheetColumnOffsets["SentrixBarcode_A"]} + 1))
 			fi
 		
-			mapfile -t sentrixBarcodes< <(awk -v s=${_sentrixBarcodeFieldIndex} 'BEGIN {FS=","}{if (NR>1){print $s}}' ${TMP_ROOT_DIR}/Samplesheets/PGx/${originalproject}.csv | sort -V  | uniq)
+			mapfile -t sentrixBarcodes< <(awk -v s="${_sentrixBarcodeFieldIndex}" 'BEGIN {FS=","}{if (NR>1){print $s}}' "${TMP_ROOT_DIR}/Samplesheets/PGx/${originalproject}.csv" | sort -V  | uniq)
 		
 			if [[ "${#sentrixBarcodes[@]}" -eq '0' ]]
 			then
@@ -214,7 +215,7 @@ else
 				continue
 			else
 				module load PGx
-				for sentrixBarcode in ${sentrixBarcodes[@]}
+				for sentrixBarcode in "${sentrixBarcodes[@]}"
 				do
 					log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "copying ${sentrixBarcode} to ${TMP_ROOT_DIR}/rawdata/gtc/"
 					rsync -rv "/groups/umcg-gap/${TMP_LFS}/rawdata/array/GTC/${sentrixBarcode}" "${TMP_ROOT_DIR}/rawdata/gtc/"

@@ -242,7 +242,7 @@ then
 					
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "untar ${gapBatchFile}"
 					tar -xvf "${gapBatchFile}"
-					samplesheet=$(find -name "D-*.csv")
+					samplesheet=$(find . -name "D-*.csv")
 					
 					cp "${samplesheet}"{,.converted}
 					printf '\n'     >> "${samplesheet}.converted"
@@ -250,16 +250,16 @@ then
 					sed -i "/^[\s,]*$/d" "${samplesheet}.converted"
 					mv "${samplesheet}.converted" "${samplesheet}"
 
-					awk '/Sample_Well/ {display=1} display {print}' ${samplesheet} | awk '{ gsub (" ", "_", $0); print}' > "${gapBatch}.csv.tmp"
+					awk '/Sample_Well/ {display=1} display {print}' "${samplesheet}" | awk '{ gsub (" ", "_", $0); print}' > "${gapBatch}.csv.tmp"
 					awk 'BEGIN {FS=","}{if (NR==1){print $0",analysis,manifest,egt"}else{print $0",diagnostics,GSAMD-24v3-0-EA_20034606_A1.bpm,referentie_GSAMD_V3_20210115.egt"}}' "${gapBatch}.csv.tmp" > "${gapBatch}.csv.tmp2"
 					
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "copying glaasjes directories to ${TMP_ROOT_DIR}/rawdata/array/IDAT/"
-					find * -type d -exec rsync -rv {} "${TMP_ROOT_DIR}/rawdata/array/IDAT/" \;
+					find ./* -type d -exec rsync -rv {} "${TMP_ROOT_DIR}/rawdata/array/IDAT/" \;
 
 					declare -a _sampleSheetColumnNames=()
 					declare -A _sampleSheetColumnOffsets=()
 
-					IFS="," read -r -a _sampleSheetColumnNames <<< "$(head -1 ${gapBatch}.csv.tmp2)"
+					IFS="," read -r -a _sampleSheetColumnNames <<< "$(head -1 "${gapBatch}.csv.tmp2")"
 					for (( _offset = 0 ; _offset < ${#_sampleSheetColumnNames[@]} ; _offset++ ))
 					do
 						_sampleSheetColumnOffsets["${_sampleSheetColumnNames[${_offset}]}"]="${_offset}"

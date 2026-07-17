@@ -271,12 +271,8 @@ then
 						_projectFieldIndex=$((${_sampleSheetColumnOffsets["Project"]} + 1))
 					else
 						log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "does not exist!!!!"
-						echo ${_sampleSheetColumnOffsets}
-						
 					fi
-					
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "projectFieldIndex=${_projectFieldIndex}"
-					
 					folder=$(date +%Y-%m)
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "checking which batch to create for this month: ${folder}"
 					if [[ ! -f "${TMP_ROOT_DIR}/runs/AGCT/${folder}_batch1" ]]

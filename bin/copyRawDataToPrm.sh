@@ -259,8 +259,6 @@ function splitSamplesheetPerProject() {
 			return
 		else
 			log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "${_run} contains the projects: ${_projects[*]}."
-			printf '%s\n' "project,run_id,pipeline,url,capturingKit,message,copy_results_prm,finishedDate" \
-				> "${JOB_CONTROLE_FILE_BASE}.trace_post_projects.csv"
 		fi
 	else
 		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Skipping ${_run}, because ${PROJECTCOLUMN} column is missing in samplesheet."
@@ -272,16 +270,6 @@ function splitSamplesheetPerProject() {
 	#
 	for _project in "${_projects[@]}"
 	do
-		#
-		# Track and Trace for project.
-		#
-		printf '%s\n' "${_project},${_run},,,,,," >> "${JOB_CONTROLE_FILE_BASE}.trace_post_projects.csv"
-		#
-		# Create samplesheet per project unless
-		#  * either only demultiplexing was requested via the samplesheet
-		#  * or when disabled on the commandline by enabling "archiveMode".
-		#
-
 		if [[ "${archiveMode}" == 'false' ]]; then
 			#
 			# Skip project if demultiplexing only.
@@ -319,7 +307,7 @@ function splitSamplesheetPerProject() {
 						#
 						# shellcheck disable=SC2029
 						
-						if ssh "${DATA_MANAGER}@${sourceServerFQDN}" "mkdir -p ${TMP_ROOT_DIR}/logs/${_project}/"
+						if ssh "${DATA_MANAGER}@${sourceServerFQDN}" "mkdir -m 2770 -p ${TMP_ROOT_DIR}/logs/${_project}/"
 						then
 							log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Succesfully created ${TMP_ROOT_DIR}/logs/${_project} on ${sourceServerFQDN}"
 						else
@@ -345,26 +333,7 @@ function splitSamplesheetPerProject() {
 			fi
 		fi
 	done
-	#
-	# Track and Trace for flowcell/rawdata.
-	#
-	local _allProjects
-	_allProjects="${_projects[*]}"
-	_allProjects="${_allProjects// /,}"
-	printf '%s\n' "\"${_allProjects}\"" > "${JOB_CONTROLE_FILE_BASE}.trace_putFromFile_overview.csv" 
-	#
-	# remove samplesheet on sourceServerFQDN
-	#
-	# shellcheck disable=SC2029
-	if ssh "${DATA_MANAGER}"@"${sourceServerFQDN}" "mv \"${TMP_ROOT_DIR}/Samplesheets/${pipeline}/${_run}.${SAMPLESHEET_EXT}\" \"${TMP_ROOT_DIR}/Samplesheets/archive/\" "
-	then
-		rm -f "${_controlFileBaseForFunction}.failed"
-		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "${_run}.${SAMPLESHEET_EXT} moved to ${TMP_ROOT_DIR}/Samplesheets/archive/ on ${sourceServerFQDN}."
-		mv "${_controlFileBaseForFunction}."{started,finished}
-	else
-		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "${_run}.${SAMPLESHEET_EXT} cannot be removed from ${TMP_ROOT_DIR}/Samplesheets/${pipeline}/ on ${sourceServerFQDN}."
-		mv "${_controlFileBaseForFunction}."{started,failed}
-	fi
+
 }
 
 function showHelp() {
@@ -774,12 +743,17 @@ else
 				mv "${JOB_CONTROLE_FILE_BASE}."{started,failed}
 			fi
 		else
-			log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "${controlFileBase}/${runPrefix}.splitSamplesheetPerProject.finished absent -> splitSamplesheetPerProject failed."
-			log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Failed to process ${filePrefix}."
-			mv -v "${JOB_CONTROLE_FILE_BASE}."{started,failed}
+			if [[ "${GROUP}" == "umcg-labgnkbh" ]]
+			then
+				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "This is labgnkbh data, no need for splitting samplesheet per project"
+			else
+				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "${controlFileBase}/${runPrefix}.splitSamplesheetPerProject.finished absent -> splitSamplesheetPerProject failed."
+				log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Failed to process ${filePrefix}."
+				mv -v "${JOB_CONTROLE_FILE_BASE}."{started,failed}
+			fi
 		fi
-		
-		mv -v "${JOB_CONTROLE_FILE_BASE}."{started,finished}
+		rm -vf "${JOB_CONTROLE_FILE_BASE}.failed"
+		mv -fv "${JOB_CONTROLE_FILE_BASE}."{started,finished}
 	done
 fi
 

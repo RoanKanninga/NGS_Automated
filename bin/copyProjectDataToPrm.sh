@@ -585,8 +585,6 @@ else
 				run=$(basename "${run}")
 				controlFileBase="${PRM_ROOT_DIR}/logs/${project}/${run}"
 				export JOB_CONTROLE_FILE_BASE="${controlFileBase}.${SCRIPT_NAME}"
-				calculateProjectMd5sFinishedFile="ssh ${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/${run}.calculateProjectMd5s.finished"
-				rawDataCopiedToPrmFinishedFile="ssh ${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished"
 				if [[ -e "${JOB_CONTROLE_FILE_BASE}.finished" ]] 
 				then
 					log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Skipping already processed batch ${project}/${run}."

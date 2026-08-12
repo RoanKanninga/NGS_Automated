@@ -63,7 +63,7 @@ Options:
 	-p	[pipeline]
 		Pipeline that produced the project data that needs to be transferred to prm. (NGS_Demultiplexing, GAP)
 	-n	Dry-run: Do not perform actual sync, but only list changes instead.
-	-s skip rawdata check; if there is no rawdata available, this option can be selected
+	-s	skip rawdata check; if there is no rawdata available, this option can be selected
 	-r	[root]
 		Root dir on the server specified with -s and from where the project data will be fetched (optional).
 		By default this is the SCR_ROOT_DIR variable, which is compiled from variables specified in the

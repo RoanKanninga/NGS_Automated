@@ -458,7 +458,7 @@ if [[ -n "${dryrun:-}" ]]
 then
 	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' 'Enabled dryrun option for rsync.'
 fi
-if [[ -n "${skipRawdataCheck:-}" ]]
+if [[ "${skipRawdataCheck}" == "true" ]]
 then
 	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' 'Enabled skipping rawdata check'
 fi

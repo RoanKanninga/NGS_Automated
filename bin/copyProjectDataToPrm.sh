@@ -63,6 +63,7 @@ Options:
 	-p	[pipeline]
 		Pipeline that produced the project data that needs to be transferred to prm. (NGS_Demultiplexing, GAP)
 	-n	Dry-run: Do not perform actual sync, but only list changes instead.
+	-s skip rawdata check; if there is no rawdata available, this option can be selected
 	-r	[root]
 		Root dir on the server specified with -s and from where the project data will be fetched (optional).
 		By default this is the SCR_ROOT_DIR variable, which is compiled from variables specified in the
@@ -406,6 +407,7 @@ function getSampleType(){
 log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Parsing commandline arguments ..."
 declare group=''
 declare dryrun=''
+declare skipRawdataCheck='false'
 while getopts ":g:l:p:d:r:shn" opt
 do
 	case "${opt}" in
@@ -589,46 +591,34 @@ else
 				then
 					log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Skipping already processed batch ${project}/${run}."
 					continue
-				elif [[ "${skipRawdataCheck}" != 'true' ]]
+				fi
+				
+				if ssh "${DATA_MANAGER}"@"${HOSTNAME_TMP}" test -e "${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/${run}.calculateProjectMd5s.finished"
+				then
+					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "found: ${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/${run}.calculateProjectMd5s.finished"
+				else
+					log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "CalculateProjectMd5s is not finished yet, the pipeline is still running"
+					continue
+				fi
+				if [[ "${skipRawdataCheck}" == 'false' ]]
 				then
 					if ssh "${DATA_MANAGER}"@"${HOSTNAME_TMP}" test -e "${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished"
 					then
 						log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "found: ${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished"
 					else
 						log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Copying the rawdata of project ${project} is not yet finished."
-						log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Cheking if the calculateProjectMd5s is finished, if so the pipeline started with only project data, copy the project data and the rawdata to prm"
-						# shellcheck disable=SC2244	
-						if ssh "${DATA_MANAGER}"@"${HOSTNAME_TMP}" test -e "${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/${run}.calculateProjectMd5s.finished"
-						then
-							log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "CalculateProjectMd5s is finished, the pipeline started with only project data, check if the rawdata is on PRM"
-							log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Creating logs folder: ${PRM_ROOT_DIR}/logs/${project}/"
-							mkdir -p "${PRM_ROOT_DIR}/logs/${project}/"
-							log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "found: ${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/${run}.calculateProjectMd5s.finished"
-							touch "${JOB_CONTROLE_FILE_BASE}.started"
-							log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "check if the rawdata is stored on PRM"
-							if [[ "${project}" != *"WGS"* ]]
-							then
-								checkRawdata "${project}" "${run}" "${controlFileBase}"
-							else
-								log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "This is WGS data! There is no raw data available"
-							fi
-						else
-							log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "CalculateProjectMd5s is not finished yet, the pipeline is still running"
-							continue
-						fi
+						log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Creating logs folder: ${PRM_ROOT_DIR}/logs/${project}/"
+						mkdir -p "${PRM_ROOT_DIR}/logs/${project}/"
+						touch "${JOB_CONTROLE_FILE_BASE}.started"
+						log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "check if the rawdata is stored on PRM"
+						checkRawdata "${project}" "${run}" "${controlFileBase}"
 					fi
-				fi
-				if ssh "${DATA_MANAGER}@${HOSTNAME_TMP}" test -e "${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/${run}.calculateProjectMd5s.finished"
-				then
+				else
 					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Creating logs folder: ${PRM_ROOT_DIR}/logs/${project}/"
 					mkdir -p "${PRM_ROOT_DIR}/logs/${project}/"
-					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "found: ${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/${run}.calculateProjectMd5s.finished"
-				else
-					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "${project}/${run} calculateProjectMd5s not yet finished."
-					continue
+					touch "${JOB_CONTROLE_FILE_BASE}.started"
 				fi
 				
-				touch "${JOB_CONTROLE_FILE_BASE}.started"
 				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "archiving samplesheet in ${PRM_ROOT_DIR}/Samplesheets/archive/"
 				rsync -av "${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/projects/${pipeline}/${project}/${run}/results/${project}.${SAMPLESHEET_EXT}" "${PRM_ROOT_DIR}/Samplesheets/archive/"
 				sampleType="$(set -e; getSampleType "${PRM_ROOT_DIR}/Samplesheets/archive/${project}.${SAMPLESHEET_EXT}")"

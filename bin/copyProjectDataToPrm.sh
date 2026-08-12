@@ -460,7 +460,7 @@ then
 fi
 if [[ "${skipRawdataCheck}" == "true" ]]
 then
-	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' 'Enabled skipping rawdata check'
+	log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' 'Skipping rawdata check'
 fi
 if [[ -z "${pipeline:-}" ]]
 then

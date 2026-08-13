@@ -234,6 +234,7 @@ function checkRawdata(){
 	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "Perfect! all the files for project ${project} are on PRM, time to make a run01.rawDataCopiedToPrm.finished"
 	# shellcheck disable=SC2029
 	ssh "${DATA_MANAGER}"@"${HOSTNAME_TMP}" touch "${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished"
+	rawDataCheckorCopyFinished='true'
 	mv "${_controlFileBaseForFunction}."{started,finished}
 
 }
@@ -585,6 +586,7 @@ else
 			for run in "${runs[@]}"
 			do
 				run=$(basename "${run}")
+				rawDataCheckorCopyFinished='false'
 				controlFileBase="${PRM_ROOT_DIR}/logs/${project}/${run}"
 				export JOB_CONTROLE_FILE_BASE="${controlFileBase}.${SCRIPT_NAME}"
 				if [[ -e "${JOB_CONTROLE_FILE_BASE}.finished" ]] 
@@ -605,26 +607,33 @@ else
 					if ssh "${DATA_MANAGER}"@"${HOSTNAME_TMP}" test -e "${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished"
 					then
 						log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "found: ${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished"
+						rawDataCheckorCopyFinished='true'
 					else
-						log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Copying the rawdata of project ${project} is not yet finished."
+						log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished not FOUND"
+						log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "check if the rawdata is stored on PRM"
 						log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Creating logs folder: ${PRM_ROOT_DIR}/logs/${project}/"
 						mkdir -p "${PRM_ROOT_DIR}/logs/${project}/"
 						touch "${JOB_CONTROLE_FILE_BASE}.started"
-						log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "check if the rawdata is stored on PRM"
 						checkRawdata "${project}" "${run}" "${controlFileBase}"
 					fi
 				else
 					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Creating logs folder: ${PRM_ROOT_DIR}/logs/${project}/"
 					mkdir -p "${PRM_ROOT_DIR}/logs/${project}/"
+					rawDataCheckorCopyFinished='true'
 					touch "${JOB_CONTROLE_FILE_BASE}.started"
 				fi
-				
-				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "archiving samplesheet in ${PRM_ROOT_DIR}/Samplesheets/archive/"
-				rsync -av "${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/projects/${pipeline}/${project}/${run}/results/${project}.${SAMPLESHEET_EXT}" "${PRM_ROOT_DIR}/Samplesheets/archive/"
-				sampleType="$(set -e; getSampleType "${PRM_ROOT_DIR}/Samplesheets/archive/${project}.${SAMPLESHEET_EXT}")"
-				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "sampleType =${sampleType}"
-				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Processing run ${project}/${run} ..."
-				rsyncProjectRun "${project}" "${run}" "${controlFileBase}"
+				if [[ "${rawDataCheckorCopyFinished}" == 'true' ]]
+				then
+					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "archiving samplesheet in ${PRM_ROOT_DIR}/Samplesheets/archive/"
+					rsync -av "${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/projects/${pipeline}/${project}/${run}/results/${project}.${SAMPLESHEET_EXT}" "${PRM_ROOT_DIR}/Samplesheets/archive/"
+					sampleType="$(set -e; getSampleType "${PRM_ROOT_DIR}/Samplesheets/archive/${project}.${SAMPLESHEET_EXT}")"
+					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "sampleType =${sampleType}"
+					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Processing run ${project}/${run} ..."
+					rsyncProjectRun "${project}" "${run}" "${controlFileBase}"
+				else
+					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "The rawdata is not yet copied, skipping this round"
+					continue
+				fi
 				if [[ -e "${controlFileBase}.rsyncProjectRun.finished" ]]
 				then
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "${controlFileBase}.rsyncProjectRun.finished present -> rsyncProjectRun completed; let's sanityCheck for project ${project}..."

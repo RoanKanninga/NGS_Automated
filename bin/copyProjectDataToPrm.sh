@@ -193,7 +193,8 @@ function checkRawdata(){
 	mapfile -t rawdataFiles < <(ssh "${DATA_MANAGER}"@"${HOSTNAME_TMP}" "find \"${TMP_ROOT_DIAGNOSTICS_DIR}/projects/${pipeline}/${_project}/${_run}/rawdata/${PRMRAWDATA}/\" -maxdepth 1 -mindepth 1 -type l -name \"*.fq.gz\" -o -name \"*.gtc\"")
 	if [[ "${#rawdataFiles[@]}" -eq '0' ]]
 	then
-		log4Bash 'WARN' "${LINENO}" "${FUNCNAME:-main}" '0' "No rawdata files found @ ${TMP_ROOT_DIAGNOSTICS_DIR}/projects/."
+		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "No rawdata files found @ ${TMP_ROOT_DIAGNOSTICS_DIR}/projects/."
+		mv "${_controlFileBaseForFunction}."{started,failed}
 		return
 	else
 		for rawdataFile in "${rawdataFiles[@]}"
@@ -234,7 +235,6 @@ function checkRawdata(){
 	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "Perfect! all the files for project ${project} are on PRM, time to make a run01.rawDataCopiedToPrm.finished"
 	# shellcheck disable=SC2029
 	ssh "${DATA_MANAGER}"@"${HOSTNAME_TMP}" touch "${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished"
-	rawDataCheckorCopyFinished='true'
 	mv "${_controlFileBaseForFunction}."{started,finished}
 
 }
@@ -586,7 +586,6 @@ else
 			for run in "${runs[@]}"
 			do
 				run=$(basename "${run}")
-				rawDataCheckorCopyFinished='false'
 				controlFileBase="${PRM_ROOT_DIR}/logs/${project}/${run}"
 				export JOB_CONTROLE_FILE_BASE="${controlFileBase}.${SCRIPT_NAME}"
 				if [[ -e "${JOB_CONTROLE_FILE_BASE}.finished" ]] 
@@ -607,7 +606,6 @@ else
 					if ssh "${DATA_MANAGER}"@"${HOSTNAME_TMP}" test -e "${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished"
 					then
 						log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "found: ${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished"
-						rawDataCheckorCopyFinished='true'
 					else
 						log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.rawDataCopiedToPrm.finished not FOUND"
 						log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "check if the rawdata is stored on PRM"
@@ -615,32 +613,37 @@ else
 						mkdir -p "${PRM_ROOT_DIR}/logs/${project}/"
 						touch "${JOB_CONTROLE_FILE_BASE}.started"
 						checkRawdata "${project}" "${run}" "${controlFileBase}"
+						
+						if [[ -e "${controlFileBase}.checkRawdata.finished" ]]
+						then
+							log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "${controlFileBase}.checkRawData.finished present -> checkRawData completed"
+						else
+							log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "${controlFileBase}.checkRawData.finished absent -> checkRawData failed"
+							continue
+						fi
 					fi
 				else
 					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Creating logs folder: ${PRM_ROOT_DIR}/logs/${project}/"
 					mkdir -p "${PRM_ROOT_DIR}/logs/${project}/"
-					rawDataCheckorCopyFinished='true'
 					touch "${JOB_CONTROLE_FILE_BASE}.started"
 				fi
-				if [[ "${rawDataCheckorCopyFinished}" == 'true' ]]
-				then
-					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "archiving samplesheet in ${PRM_ROOT_DIR}/Samplesheets/archive/"
-					rsync -av "${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/projects/${pipeline}/${project}/${run}/results/${project}.${SAMPLESHEET_EXT}" "${PRM_ROOT_DIR}/Samplesheets/archive/"
-					sampleType="$(set -e; getSampleType "${PRM_ROOT_DIR}/Samplesheets/archive/${project}.${SAMPLESHEET_EXT}")"
-					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "sampleType =${sampleType}"
-					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Processing run ${project}/${run} ..."
-					rsyncProjectRun "${project}" "${run}" "${controlFileBase}"
-				else
-					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "The rawdata is not yet copied, skipping this round"
-					continue
-				fi
+				
+				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "archiving samplesheet in ${PRM_ROOT_DIR}/Samplesheets/archive/"
+				rsync -av "${DATA_MANAGER}@${HOSTNAME_TMP}:${TMP_ROOT_DIAGNOSTICS_DIR}/projects/${pipeline}/${project}/${run}/results/${project}.${SAMPLESHEET_EXT}" "${PRM_ROOT_DIR}/Samplesheets/archive/"
+				sampleType="$(set -e; getSampleType "${PRM_ROOT_DIR}/Samplesheets/archive/${project}.${SAMPLESHEET_EXT}")"
+				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "sampleType =${sampleType}"
+				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Processing run ${project}/${run} ..."
+				rsyncProjectRun "${project}" "${run}" "${controlFileBase}"
+			
 				if [[ -e "${controlFileBase}.rsyncProjectRun.finished" ]]
 				then
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "${controlFileBase}.rsyncProjectRun.finished present -> rsyncProjectRun completed; let's sanityCheck for project ${project}..."
-					sanityCheck "${project}" "${run}" "${sampleType}" "${controlFileBase}"
 				else
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "${controlFileBase}.rsyncProjectRun.finished absent -> rsyncProjectRun failed."
+					continue
 				fi
+				sanityCheck "${project}" "${run}" "${sampleType}" "${controlFileBase}"
+				
 				if [[ -e "${controlFileBase}.sanityCheck.finished" ]]
 				then
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "${controlFileBase}.sanityCheck.finished present -> sanityCheck completed; let's upload data to Track and Trace for project ${project}..."
@@ -653,42 +656,42 @@ else
 						mv "${JOB_CONTROLE_FILE_BASE}."{started,failed}
 						continue
 					fi
-
-					#
-					# Add info for colleagues that will process the results.
-					# This will appear in the messeages send by notifications.sh
-					#
-					echo '' > "${JOB_CONTROLE_FILE_BASE}.started"
-					log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "The data is available at ${PRM_ROOT_DIR}/projects/${project}/${run}/."
-					mountedCifsDevice="$(awk -v mountpoint="${PRM_ROOT_DIR}" '$2==mountpoint && $3=="cifs" {print $1}' /proc/mounts)"
-					if [[ -n "${mountedCifsDevice:-}" ]]; then
-						printf 'file:%s/projects/%s/%s/\n' \
-							"${mountedCifsDevice}" "${project}" "${run}" \
-							>> "${JOB_CONTROLE_FILE_BASE}.started"
-					fi
-					# shellcheck disable=SC2029
-					if ssh "${DATA_MANAGER}@${HOSTNAME_TMP}" "touch ${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.projectDataCopiedToPrm.finished"
-					then
-						log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Succesfully created ${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.projectDataCopiedToPrm.finished on ${HOSTNAME_TMP}"
-					else
-						log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Could not create ${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.projectDataCopiedToPrm.finished on ${HOSTNAME_TMP}"
-						mv "${JOB_CONTROLE_FILE_BASE}."{started,failed}
-						continue
-					fi
-
-					rm -f "${JOB_CONTROLE_FILE_BASE}.failed"
-					mv -v "${JOB_CONTROLE_FILE_BASE}."{started,finished}
-					log4Bash 'INFO' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Finished processing project ${project}."
-					log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Found ${JOB_CONTROLE_FILE_BASE}.finished. Setting track & trace state to finished :)."
-					dateFinished=$(date +%FT%T%z -r "${JOB_CONTROLE_FILE_BASE}.finished")
-					printf '"%s"\n' "${dateFinished}" > "${JOB_CONTROLE_FILE_BASE}.trace_putFromFile_projects.csv"
-					echo "finished: $(date +%FT%T%z)" >> "${JOB_CONTROLE_FILE_BASE}.totalRunTime"
 				else
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "${controlFileBase}.sanityCheck.finished absent -> rsyncProjectRun failed."
 					log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Failed to process project ${project}."
 					mv -v "${JOB_CONTROLE_FILE_BASE}."{started,failed}
-					log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Found ${JOB_CONTROLE_FILE_BASE}.failed. Setting track & trace state to failed :(."
+					continue
 				fi
+				#
+				# Add info for colleagues that will process the results.
+				# This will appear in the messeages send by notifications.sh
+				#
+				echo '' > "${JOB_CONTROLE_FILE_BASE}.started"
+				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "The data is available at ${PRM_ROOT_DIR}/projects/${project}/${run}/."
+				mountedCifsDevice="$(awk -v mountpoint="${PRM_ROOT_DIR}" '$2==mountpoint && $3=="cifs" {print $1}' /proc/mounts)"
+				if [[ -n "${mountedCifsDevice:-}" ]]; then
+					printf 'file:%s/projects/%s/%s/\n' \
+						"${mountedCifsDevice}" "${project}" "${run}" \
+						>> "${JOB_CONTROLE_FILE_BASE}.started"
+				fi
+				# shellcheck disable=SC2029
+				if ssh "${DATA_MANAGER}@${HOSTNAME_TMP}" "touch ${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.projectDataCopiedToPrm.finished"
+				then
+					log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Succesfully created ${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.projectDataCopiedToPrm.finished on ${HOSTNAME_TMP}"
+				else
+					log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" '0' "Could not create ${TMP_ROOT_DIAGNOSTICS_DIR}/logs/${project}/run01.projectDataCopiedToPrm.finished on ${HOSTNAME_TMP}"
+					mv "${JOB_CONTROLE_FILE_BASE}."{started,failed}
+					continue
+				fi
+
+				rm -f "${JOB_CONTROLE_FILE_BASE}.failed"
+				mv -v "${JOB_CONTROLE_FILE_BASE}."{started,finished}
+				log4Bash 'INFO' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Finished processing project ${project}."
+				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Found ${JOB_CONTROLE_FILE_BASE}.finished. Setting track & trace state to finished :)."
+				dateFinished=$(date +%FT%T%z -r "${JOB_CONTROLE_FILE_BASE}.finished")
+				printf '"%s"\n' "${dateFinished}" > "${JOB_CONTROLE_FILE_BASE}.trace_putFromFile_projects.csv"
+				echo "finished: $(date +%FT%T%z)" >> "${JOB_CONTROLE_FILE_BASE}.totalRunTime"
+				
 			done
 		fi
 	done

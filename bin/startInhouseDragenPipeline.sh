@@ -253,9 +253,9 @@ do
 			readarray -t fastQFiles < <(find "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" -name "*.gz")
 			if [[ "${#fastQFiles[@]}" -ge 2 ]]
 			then
-					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Two or more fastq files found in /groups/${group}/${TMP_LFS}/rawdata/ngs/${run}"
-					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Rawdata is available for ${run}. Workflow will be workflow_dragen_solo!"
-					workflow='workflow_dragen_solo.nf'
+				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Two or more fastq files found in /groups/${group}/${TMP_LFS}/rawdata/ngs/${run}"
+				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Rawdata is available for ${run}. Workflow will be workflow_dragen_solo!"
+				workflow='workflow_dragen_solo.nf'
 			else
 				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "run dragenSolo is selected, folder /groups/${group}/${TMP_LFS}/rawdata/ngs/${run} exists, but there are no fastq files(.gz) in this folder!"
 				continue

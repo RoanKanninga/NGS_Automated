@@ -227,11 +227,6 @@ function submitJobScripts () {
 	cd "${TMP_ROOT_DIR}/projects/${pipeline}/${_project}/${_run}/jobs/" || return
 	thisFolder=$(pwd) || return
 	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Navigated to ${thisFolder}."
-	#
-	# Track and Trace: project status.
-	#
-	# shellcheck disable=SC2154
-	#
 	# Determine submit options.
 	#
 	log4Bash 'INFO' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Submitting jobs for ${_project}/${_run} ..."

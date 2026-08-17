@@ -57,6 +57,7 @@ Usage:
 Options:
 	-h	Show this help.
 	-g	Group.
+	-s	run dragen solo
 	-l	Log level.
 		Must be one of TRACE, DEBUG, INFO (default), WARN, ERROR or FATAL.
 
@@ -83,7 +84,8 @@ EOH
 #
 log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Parsing commandline arguments ..."
 declare group=''
-while getopts ":g:l:h" opt
+declare runDragenSolo='false'
+while getopts ":g:l:sh" opt
 do
 	case "${opt}" in
 		h)
@@ -91,6 +93,10 @@ do
 			;;
 		g)
 			group="${OPTARG}"
+			;;
+		s)
+			runDragenSolo='true'
+			log4Bash 'INFO' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Run Dragen solo activated"
 			;;
 		l)
 			l4b_log_level="${OPTARG^^}"
@@ -243,18 +249,15 @@ do
 	samplesheet="${TMP_ROOT_DIR}/Samplesheets/DRAGEN/${run}.csv"
 	if [[ -d "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" ]]
 	then
-#		readarray -t fastQFiles < <(find "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" -name "*.gz")
-#		if [[ "${#fastQFiles[@]}" -ge 2 ]]
-#		then
-#				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "yes more than 2 fastq files"
-#				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Rawdata is available for ${run}. workflow will be workflow_dragen_solo"
-#				workflow='workflow_dragen_solo.nf'
-#		else
+		if [[ "${runDragenSolo}" == 'true' ]]
+		then
+				workflow='workflow_dragen_solo.nf'
+		else
 			log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Checking if bcl data is available."
 			#
 			# Check if the run has already completed.
 			#
-			if [[	! -e ${NEW_SEQ_DIR}/${run} ]]
+			if [[	! -e "${NEW_SEQ_DIR}/${run}" ]]
 			then
 				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "There is no bcl data available at all for: ${run}."
 				continue
@@ -266,7 +269,7 @@ do
 				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Sequencer is busy producing data: skipping ${run}."
 				continue
 			fi
-#		fi
+		fi
 	else
 		
 		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Checking if bcl data is available."

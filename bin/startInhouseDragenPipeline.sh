@@ -263,6 +263,7 @@ do
 		else
 			log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "run dragenSolo is selected but this folder:/groups/${group}/${TMP_LFS}/rawdata/ngs/${run} does not exist!"
 			continue
+		fi
 	else
 		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Checking if bcl data is available."
 		#

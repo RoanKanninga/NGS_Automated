@@ -241,42 +241,34 @@ do
 	# shellcheck disable=SC2174
 	mkdir -m 770 -p "${TMP_ROOT_DIR}/logs/${run}/"
 	
-	
-	#
-	# Check if the rawdata(fastQ) available 
-	#
 	workflow='workflow_dragen.nf'
 	samplesheet="${TMP_ROOT_DIR}/Samplesheets/DRAGEN/${run}.csv"
-	if [[ -d "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" ]]
+	if [[ "${runDragenSolo}" == 'true' ]]
 	then
-		if [[ "${runDragenSolo}" == 'true' ]]
+		if [[ -d "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" ]]
 		then
-			workflow='workflow_dragen_solo.nf'
-		else
-			log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Checking if bcl data is available."
 			#
-			# Check if the run has already completed.
+			# Check if the rawdata(fastQ) available 
 			#
-			if [[	! -e "${NEW_SEQ_DIR}/${run}" ]]
+			readarray -t fastQFiles < <(find "/groups/${group}/${TMP_LFS}/rawdata/ngs/${run}" -name "*.gz")
+			if [[ "${#fastQFiles[@]}" -ge 2 ]]
 			then
-				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "There is no bcl data available at all for: ${run}."
-				continue
-			fi
-			if [[ -f "${NEW_SEQ_DIR}/${run}/RunCompletionStatus.xml" ]]
-			then
-				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Sequencer has completed data generation for: ${run}."
+					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Two or more fastq files found in /groups/${group}/${TMP_LFS}/rawdata/ngs/${run}"
+					log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Rawdata is available for ${run}. Workflow will be workflow_dragen_solo!"
+					workflow='workflow_dragen_solo.nf'
 			else
-				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Sequencer is busy producing data: skipping ${run}."
+				log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "run dragenSolo is selected, folder /groups/${group}/${TMP_LFS}/rawdata/ngs/${run} exists, but there are no fastq files(.gz) in this folder!"
 				continue
 			fi
-		fi
+		else
+			log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "run dragenSolo is selected but this folder:/groups/${group}/${TMP_LFS}/rawdata/ngs/${run} does not exist!"
+			continue
 	else
-		
 		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Checking if bcl data is available."
 		#
 		# Check if the run has already completed.
 		#
-		if [[ ! -e ${NEW_SEQ_DIR}/${run} ]]
+		if [[ ! -e "${NEW_SEQ_DIR}/${run}" ]]
 		then
 			log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "There is no bcl data available at all for: ${run}."
 			continue
@@ -290,12 +282,11 @@ do
 		fi
 	fi
 
-	
 	touch "${jobControleFileBase}.started"
 	#
 	# All ingredients are present and the run has not been processed yet.
 	#
-	####### NEXTFLOW ######
+
 	mkdir -p "${TMP_ROOT_DIR}/nextflow/${run}"
 
 	module load nextflow
@@ -303,7 +294,6 @@ do
 	cd "${TMP_ROOT_DIR}/nextflow/${run}"
 	thisHost=$(hostname)
 
-	
 	if [[ "${group}" == 'umcg-labgnkbh' ]]
 	then
 		nextflow run -resume --samplesheet "${samplesheet}" --tmpdir "${TMP_LFS}" --group "${group}" --cluster "${thisHost}" -profile slurm -w "${TMP_ROOT_DIR}/nextflow/${run}" -c "${EBROOTNF_NGS_DNA}/dragen.config" "${EBROOTNF_NGS_DNA}/workflow_demultiplexing.nf" \

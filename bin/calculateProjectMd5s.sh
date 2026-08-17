@@ -142,7 +142,7 @@ function calculateMd5() {
 		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "THISDIR: $(pwd)"
 	
 		numberofBam=$(find  "${_run}/results/alignment/" -name "*.bam" | wc -l)
-		numberofBamMd5=$(find "${_run}/results/alignment/" -name "*.bam" | wc -l)
+		numberofBamMd5=$(find "${_run}/results/alignment/" -name "*.bam.md5" | wc -l)
 	
 		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "numberOfBam: ${numberofBam} & numberOfBamMd5: ${numberofBamMd5}"
 		if [[ "${numberofBam}" == "${numberofBamMd5}" ]]

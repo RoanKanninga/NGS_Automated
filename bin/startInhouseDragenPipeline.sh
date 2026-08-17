@@ -251,7 +251,7 @@ do
 	then
 		if [[ "${runDragenSolo}" == 'true' ]]
 		then
-				workflow='workflow_dragen_solo.nf'
+			workflow='workflow_dragen_solo.nf'
 		else
 			log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Checking if bcl data is available."
 			#
@@ -276,7 +276,7 @@ do
 		#
 		# Check if the run has already completed.
 		#
-		if [[	! -e ${NEW_SEQ_DIR}/${run} ]]
+		if [[ ! -e ${NEW_SEQ_DIR}/${run} ]]
 		then
 			log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "There is no bcl data available at all for: ${run}."
 			continue
@@ -286,7 +286,6 @@ do
 			log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Sequencer has completed data generation for: ${run}."
 		else
 			log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Sequencer is busy producing data: skipping ${run}."
-		
 			continue
 		fi
 	fi

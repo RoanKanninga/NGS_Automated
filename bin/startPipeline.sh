@@ -227,29 +227,6 @@ function submitJobScripts () {
 	cd "${TMP_ROOT_DIR}/projects/${pipeline}/${_project}/${_run}/jobs/" || return
 	thisFolder=$(pwd) || return
 	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Navigated to ${thisFolder}."
-	#
-	# Track and Trace: project status.
-	#
-	# shellcheck disable=SC2154
-	local _url="https://${MOLGENISSERVER}/menu/track&trace/dataexplorer?entity=status_jobs&mod=data&query%5Bq%5D%5B0%5D%5Boperator%5D=SEARCH&query%5Bq%5D%5B0%5D%5Bvalue%5D=${_project}"
-	printf '%s,%s,%s,%s,%s,%s,%s,%s\n' 'project' 'run_id' 'pipeline' 'url' 'capturingKit' 'message' 'copy_results_prm' 'finishedDate' \
-		>  "${JOB_CONTROLE_FILE_BASE}.trace_post_projects.csv"
-	printf '%s,%s,%s,%s,%s,%s,%s,%s\n' "${_project}" "${_labRunID}" "${_sampleType}" "${_url}" "${_capturingKit}" '' '' '' \
-		>> "${JOB_CONTROLE_FILE_BASE}.trace_post_projects.csv"
-	#
-	# Track and Trace: jobs for this project.
-	#
-	local _jobNames
-	readarray -t _jobNames < <(grep '^processJob' submit.sh  | cut -d ' ' -f 2 | tr -d '"')
-	_url="https://${MOLGENISSERVER}/menu/track&trace/dataexplorer?entity=status_samples&hideselect=true&mod=data&query%5Bq%5D%5B0%5D%5Boperator%5D=SEARCH&query%5Bq%5D%5B0%5D%5Bvalue%5D=${_project}"
-	printf '%s,%s,%s,%s,%s,%s,%s,%s\n' 'project_job' 'job' 'project' 'started_date' 'finished_date' 'status' 'url' 'step' \
-		>  "${JOB_CONTROLE_FILE_BASE}.trace_post_jobs.csv"
-	for _jobName in "${_jobNames[@]}"
-	do
-		printf '%s,%s,%s,%s,%s,%s,%s,%s\n' "${_project}_${_jobName}" "${_jobName}" "${_project}" '' '' '' "${_url}" "${_jobName%_*}" \
-			>> "${JOB_CONTROLE_FILE_BASE}.trace_post_jobs.csv"
-	done
-	#
 	# Determine submit options.
 	#
 	log4Bash 'INFO' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Submitting jobs for ${_project}/${_run} ..."

@@ -128,7 +128,7 @@ function calculateMd5() {
 			return
 		}
 	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "checking for .bam.md5sum files in the $(pwd)/${_run} folder"
-	if find "${_run}/" -name "*.bam.md5sum" -print -quit 2>/dev/null | read -r
+	if find "${_run}/" -name "*.bam.md5" -print -quit 2>/dev/null | read -r
 	then	
 		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "running md5deep without recalculating the checksums of the bam"
 		find "${_run}/" ! -name "*.bam" -exec md5deep -j0 -o f -l {} + > "${_run}.md5" 2>> "${JOB_CONTROLE_FILE_BASE}.started" \

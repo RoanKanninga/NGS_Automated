@@ -127,7 +127,7 @@ function calculateMd5() {
 			mv "${JOB_CONTROLE_FILE_BASE}."{started,failed}
 			return
 		}
-	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "checking for .bam.md5sum files in the $(pwd)/${_run} folder"
+	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "checking for .bam.md5 files in the $(pwd)/${_run} folder"
 	if find "${_run}/" -name "*.bam.md5" -print -quit 2>/dev/null | read -r
 	then	
 		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "running md5deep without recalculating the checksums of the bam"
@@ -142,7 +142,7 @@ function calculateMd5() {
 		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "THISDIR: $(pwd)"
 	
 		numberofBam=$(find  "${_run}/results/alignment/" -name "*.bam" | wc -l)
-		numberofBamMd5=$(find "${_run}/results/alignment/" -name "*.bam.md5sum" | wc -l)
+		numberofBamMd5=$(find "${_run}/results/alignment/" -name "*.bam" | wc -l)
 	
 		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "numberOfBam: ${numberofBam} & numberOfBamMd5: ${numberofBamMd5}"
 		if [[ "${numberofBam}" == "${numberofBamMd5}" ]]
@@ -152,7 +152,7 @@ function calculateMd5() {
 				log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Merging the checksums has already happened, no need for another merge"
 				return
 			else
-				find "${_run}/" -name "*.bam.md5sum" -exec awk '{f=FILENAME; sub(/\.md5sum$/, "", f); print $1"  "f}' {} + >> "${_run}.md5"
+				find "${_run}/" -name "*.bam.md5" -exec awk '{f=FILENAME; sub(/\.md5$/, "", f); print $1"  "f}' {} + >> "${_run}.md5"
 				touch "${JOB_CONTROLE_FILE_BASE}.mergedMd5s"
 			fi
 		else
@@ -163,7 +163,7 @@ function calculateMd5() {
 			return
 		fi
 	else
-		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "There are no .bam.md5sum files in the $(pwd)/${_run} folder, calculating checksums for every file"
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "There are no .bam.md5 files in the $(pwd)/${_run} folder, calculating checksums for every file"
 		md5deep -r -j0 -o f -l "${_run}/" > "${_run}.md5" 2>> "${JOB_CONTROLE_FILE_BASE}.started" \
 				|| {
 					log4Bash 'ERROR' "${LINENO}" "${FUNCNAME:-main}" "${?}" \

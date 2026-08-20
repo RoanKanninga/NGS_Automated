@@ -208,6 +208,7 @@ then
 					rmdir "${HOME}/empty_dir/"
 					touch "${TMP_ROOT_DIR}/logs/${gsBatch}/${gsBatch}.dataCleanedOnTransferServer"
 					mv -vf "${TMP_ROOT_DIR}/logs/${gsBatch}" "${TMP_ROOT_DIR}/logs/archive_${year}/"
+					mv -vf "${TMP_ROOT_DIR}/logs/${gsProjectName}" "${TMP_ROOT_DIR}/logs/archive_${year}/"
 				fi
 			fi
 		done
@@ -246,7 +247,7 @@ else
 				rm -Rfv "${TMP_ROOT_DIR}/"{projects,generatedscripts}"/${pipeline}/${projectName}/"
 				rm -rfv "${TMP_ROOT_DIR}/nextflow/${projectName}"
 				rm -vf "${TMP_ROOT_DIR}/Samplesheets/${projectName}.csv"
-				mv "${TMP_ROOT_DIR}/logs/${projectName}" "${TMP_ROOT_DIR}/logs/archive_${year}/"
+				mv -vf "${TMP_ROOT_DIR}/logs/${projectName}" "${TMP_ROOT_DIR}/logs/archive_${year}/"
 			else
 				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME:-main}" '0' "The projectDataCopiedToPrm.finished is $(((dateInSecNow - dateInSecAnalysisData) / 86400)) day(s) old. To remove the project and generatedscripts folders the ${TMP_ROOT_DIR}/logs/${projectName}/run01.projectDataCopiedToPrm.finished file needs to be at least ${daysTillRemoval} days old."
 			fi

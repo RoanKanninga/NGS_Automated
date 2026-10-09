@@ -467,7 +467,7 @@ do
 			--log-file="${logDir}/rsync.log" \
 			"${samplesheetChecked}" \
 			"${samplesheetDestination}" \
-		 >> "${JOB_CONTROLE_FILE_BASE}.started" || exit 1
+			>> "${JOB_CONTROLE_FILE_BASE}.started" || exit 1
 	done
 	rm -fv "${samplesheetChecked}"
 	mv -v "${JOB_CONTROLE_FILE_BASE}."{started,finished}

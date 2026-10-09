@@ -461,7 +461,6 @@ do
 		#
 		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "Pushing samplesheet ${samplesheetChecked} using rsync to ${samplesheetDestination} ..."
 		log4Bash 'INFO' "${LINENO}" "${FUNCNAME:-main}" '0' "See ${logDir}/rsync.log for details ..."
-		transactionStatus='Ok'
 
 			/usr/bin/rsync -vt \
 			--log-file="${logDir}/rsync.log" \

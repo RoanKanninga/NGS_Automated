@@ -167,8 +167,12 @@ function sanityChecking(){
 		then
 			newProjectName="${projectNumber%?}I-${projectSuffix}"
 			log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "new samplesheet name will be ${newProjectName}.csv"
+		elif [[ "${projectNumber: -1}" == "I" ]]	
+		then
+			newProjectName="${projectNumber%?}J-${projectSuffix}"
+			log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "new samplesheet name will be ${newProjectName}.csv"
 		else
-			log4Bash 'INFO' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "This was too much reanalysis, projectname options are G,H or I"
+			log4Bash 'INFO' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "This was too much reanalysis, projectname options are G,H,I or J"
 			return
 		fi
 		if [[ ! -e "${TMP_ROOT_DIR}/Samplesheets/${projectName}.csv.original" ]]
@@ -301,38 +305,55 @@ function mergeSamplesheets(){
 	else
 		_pythonLogLevel="${l4b_log_level}"
 	fi
+	
+	csvFile=$(ls -1 "${TMP_ROOT_DIR}/${gsBatch}/UMCG_CSV_"*".csv")
+	mapfile -t uniqProjects< <(awk 'BEGIN {FS=","}{if (NR>1){print $2}}' "${csvFile}" | awk 'BEGIN {FS="-"}{print $1"-"$2}' | sort -V  | uniq)
+	base_project="${uniqProjects[0]}"
+	if [[ "${#uniqProjects[@]}" -eq '0' ]]
+	then
+		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "There are no projects, ERROR "
+		return
+	fi
+	
+	if [[ "${gsBatch}" == *_A ]]
+	then
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "project = ${base_project}"
+		project="${base_project/[GH]-/H-}"
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "gsBatch = _A --> projectH"
+	elif [[ "${gsBatch}" == *_B ]]
+	then
+		project="${base_project/[GH]-/I-}"
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "gsBatch = _B --> projectI"
+	elif [[ "${gsBatch}" == *_C ]]
+	then
+		project="${base_project/[GHI]-/J-}"
+				log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "gsBatch = _C --> projectJ"
+	else
+		project="${uniqProjects[0]}"
+		log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "gsBatch = first batch --> projectG"
+	fi
+
 	#
 	# Combine GenomeScan samplesheet per batch with inhouse samplesheet(s) per project.
 	#
 	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "combining GS samplesheet with inhouse samplesheet"
-	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "createInhouseSamplesheetFromGS_v2.py --genomeScanInputDir \"${TMP_ROOT_DIR}/${_batch}/\" --inhouseSamplesheetsInputDir \"${TMP_ROOT_DIR}/Samplesheets/\" --samplesheetsOutputDir \"${TMP_ROOT_DIR}/${_batch}/\" --batchName \"${_batch}\" --logLevel \"${_pythonLogLevel}\" >> ${_controlFileBaseForFunction}.started"
-	createInhouseSamplesheetFromGS_v2.py \
+	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "createInhouseSamplesheetFromGS_v3.py --genomeScanInputDir \"${TMP_ROOT_DIR}/${_batch}/\" --inhouseSamplesheetsInputDir \"${TMP_ROOT_DIR}/Samplesheets/\" --samplesheetsOutputDir \"${TMP_ROOT_DIR}/${_batch}/\" --batchName \"${_batch}\" --projectName \"${project}\" --logLevel \"${_pythonLogLevel}\" >> ${_controlFileBaseForFunction}.started"
+	createInhouseSamplesheetFromGS_v3.py \
 		--genomeScanInputDir "${TMP_ROOT_DIR}/${_batch}/" \
 		--inhouseSamplesheetsInputDir "${TMP_ROOT_DIR}/Samplesheets/" \
 		--samplesheetsOutputDir "${TMP_ROOT_DIR}/${_batch}/" \
 		--batchName "${_batch}" \
+		--projectName ${project} \
 		--logLevel "${_pythonLogLevel}" \
 		>> "${_controlFileBaseForFunction}.started" 2>&1 \
 	|| {
-		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "createInhouseSamplesheetFromGS_v2.py failed. (project=${_projectName})"
+		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "createInhouseSamplesheetFromGS_v3.py failed. (project=${project})"
 		mv "${_controlFileBaseForFunction}."{started,failed}
 		return
 	}
 
 
-	csvFile=$(ls -1 "${TMP_ROOT_DIR}/${gsBatch}/UMCG_CSV_"*".csv")
-	mapfile -t uniqProjects< <(awk 'BEGIN {FS=","}{if (NR>1){print $2}}' "${csvFile}" | awk 'BEGIN {FS="-"}{print $1"-"$2}' | sort -V  | uniq)
-	if [[ "${#uniqProjects[@]}" -eq '0' ]]
-	then
-		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "There are no projects, ERROR "
-		return
-	elif [[ "${#uniqProjects[@]}" -gt '1' ]]
-	then
-		log4Bash 'ERROR' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "There is more than 1 project (NUMBER:${#uniqProjects[@]})"
-		return
-	fi
-		# 	then
-	samplesheet="${TMP_ROOT_DIR}/${_batch}/${uniqProjects[0]}.csv"
+	samplesheet="${TMP_ROOT_DIR}/${_batch}/${project}.csv"
 	
 	log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "Moving ${samplesheet} to ${TMP_ROOT_DIR}/Samplesheets/POST_DRAGEN/"
 	mv -v "${samplesheet}" "${TMP_ROOT_DIR}/Samplesheets/POST_DRAGEN/"
@@ -557,6 +578,7 @@ log4Bash 'DEBUG' "${LINENO}" "${FUNCNAME:-main}" '0' "Log files will be written 
 
 				if [[ -e "${controlFileBase}.${analysisFolder}_mergeSamplesheets.finished" ]]
 				then
+					mkdir -p "${TMP_ROOT_DIR}/logs/${projectName}"
 					rsync -v "${TMP_ROOT_DIR}/logs/${gsBatch}/${gsBatch}.PullGsAnalysisData.uploadTiming" "${TMP_ROOT_DIR}/logs/${projectName}/PullGsAnalysisData.uploadTiming"
 					rsync -v "${TMP_ROOT_DIR}/logs/${gsBatch}/${gsBatch}.PullGsAnalysisData.transferTiming" "${TMP_ROOT_DIR}/logs/${projectName}/PullGsAnalysisData.transferTiming" 
 					log4Bash 'TRACE' "${LINENO}" "${FUNCNAME[0]:-main}" '0' "${controlFileBase}.mergeSamplesheets.finished present -> processing completed for batch ${gsBatch}..."
